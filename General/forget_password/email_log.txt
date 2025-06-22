@@ -220,3 +220,77 @@ Message:
         </html>
 ==================================================
 
+=== WEBHOOK EMAIL LOG ===
+Date: 2025-06-21 14:41:52
+To: cymonelopez06@gmail.com
+Subject: Verification Code - STVC Election System
+Webhook URL: https://webhook.site/3ade3b19-9e0c-4267-95a0-70d27b6fc307
+Message:
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verification Code</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }
+                .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+                .header h1 { margin: 0; font-size: 2rem; }
+                .header p { margin: 10px 0 0 0; opacity: 0.9; }
+                .content { padding: 40px; background: #ffffff; }
+                .code { background: #667eea; color: white; font-size: 2.5em; font-weight: bold; padding: 25px; text-align: center; border-radius: 10px; margin: 30px 0; letter-spacing: 8px; font-family: monospace; }
+                .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 25px 0; }
+                .warning strong { color: #856404; }
+                .warning ul { margin: 10px 0; padding-left: 20px; }
+                .warning li { margin: 5px 0; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 0.9em; background: #f8f9fa; border-top: 1px solid #e9ecef; }
+                .webhook-notice { background: #e3f2fd; border: 1px solid #2196f3; padding: 15px; border-radius: 8px; margin: 20px 0; }
+                @media (max-width: 600px) { .container { margin: 10px; } .content { padding: 20px; } .code { font-size: 2em; letter-spacing: 5px; } }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>STVC Election System</h1>
+                    <p>Verification Code</p>
+                </div>
+                <div class="content">
+                    <h2>Hello Cymone Lopez,</h2>
+                    <p>You have requested to reset your password. Please use the verification code below:</p>
+                    
+                    <div class="code">489472</div>
+                    
+                    <div class="warning">
+                        <strong>Important Security Information:</strong>
+                        <ul>
+                            <li>This code will expire in 10 minutes</li>
+                            <li>If you didn't request this code, please ignore this email</li>
+                            <li>Never share this code with anyone</li>
+                            <li>This code can only be used once</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="webhook-notice">
+                        <strong>🔧 Development Notice:</strong><br>
+                        This email was sent via webhook.site for testing purposes.<br>
+                        In production, this would be sent to your actual email address.
+                    </div>
+                    
+                    <p>Enter this code on the verification page to proceed with password reset.</p>
+                    
+                    <p style="margin-top: 30px;">
+                        <strong>Best regards,</strong><br>
+                        STVC Election System Team
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>This is an automated message. Please do not reply to this email.</p>
+                    <p>&copy; 2025 STVC Election System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+==================================================
+

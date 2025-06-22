@@ -1,7 +1,9 @@
 <?php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/../../vendor/autoload.php';
 session_start();
 require_once '../config/connect.php';
-require_once 'webhook_email_helper.php';
 
 $message = '';
 $message_type = '';
@@ -9,12 +11,11 @@ $message_type = '';
 // Handle resend code
 if (isset($_POST['resend'])) {
     if (isset($_SESSION['fp_user_email'], $_SESSION['fp_user_name'])) {
-        $emailHelper = new WebhookEmailHelper();
-        $code = $emailHelper->generateVerificationCode();
+        $code = generateVerificationCode();
         $expires = time() + 600;
         $_SESSION['fp_code'] = $code;
         $_SESSION['fp_code_expires'] = $expires;
-        $emailHelper->sendVerificationCode($_SESSION['fp_user_email'], $code, $_SESSION['fp_user_name']);
+        sendVerificationCodeSMTP($_SESSION['fp_user_email'], $code, $_SESSION['fp_user_name']);
         $message = 'A new verification code has been sent to your email.';
         $message_type = 'success';
     }
@@ -57,6 +58,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['resend'])) {
         header('Location: reset_password.php?token=' . $token);
         exit();
     }
+}
+
+function generateVerificationCode() {
+    return str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+}
+
+function sendVerificationCodeSMTP($to_email, $code, $user_name) {
+    $from_email = 'semetvcs@gmail.com';
+    $from_name = 'STVC Election System';
+    $smtp_host = 'smtp.gmail.com';
+    $smtp_username = 'semetvcs@gmail.com';
+    $smtp_password = 'vtfoklbfskrsjlms'; // Inserted Gmail App Password (no spaces)
+    $smtp_port = 587;
+    $subject = 'Verification Code - STVC Election System';
+    $message = getVerificationCodeTemplate($code, $user_name);
+
+    $mail = new PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = $smtp_host;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $smtp_username;
+        $mail->Password   = $smtp_password;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = $smtp_port;
+        $mail->setFrom($from_email, $from_name);
+        $mail->addAddress($to_email);
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $message;
+        $mail->send();
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+function getVerificationCodeTemplate($code, $user_name) {
+    return 'Dear ' . htmlspecialchars($user_name) . ',<br><br>Your verification code is: <b>' . $code . '</b><br><br>This code will expire in 10 minutes.<br><br>Thank you!<br><br>STVC Election System';
 }
 ?>
 <!DOCTYPE html>
