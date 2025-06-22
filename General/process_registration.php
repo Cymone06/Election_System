@@ -1,6 +1,7 @@
 <?php
 require_once 'config/session_config.php';
 require_once 'config/connect.php';
+require_once __DIR__ . '/includes/email_helper.php';
 
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -72,23 +73,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         // Hash the password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        // Set the initial status to 'pending'
-        $status = 'pending';
-
-        // Insert user into database
-        $stmt = $conn->prepare('INSERT INTO students (first_name, last_name, student_id, email, id_number, phone_number, department, password, agreed_terms, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt->bind_param('ssssssssis', $first_name, $last_name, $student_id, $email, $id_number, $phone_number, $department, $hashed_password, $agreed_terms, $status);
-        
-        if ($stmt->execute()) {
-            error_log("Registration successful for student: $student_id, status: $status");
-            $_SESSION['success'] = 'Registration successful! Your account is pending approval by an administrator. You will be notified via email once it is approved.';
-            header('Location: login.php');
-            exit;
-        } else {
-            error_log("Registration failed: " . $stmt->error);
-            $errors[] = 'Registration failed. Please try again. Error: ' . $stmt->error;
-        }
+        // Generate verification code
+        $verification_code = random_int(100000, 999999);
+        $expires_at = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        // Store code in email_verifications
+        $stmt = $conn->prepare('INSERT INTO email_verifications (email, code, expires_at) VALUES (?, ?, ?)');
+        $stmt->bind_param('sss', $email, $verification_code, $expires_at);
+        $stmt->execute();
         $stmt->close();
+        // Send code via email (PHPMailer)
+        $subject = 'Your Email Verification Code';
+        $body = "Your verification code is: <b>$verification_code</b> (valid for 10 minutes)";
+        if (!sendSystemEmail($email, $subject, $body, $first_name)) {
+            $errors[] = 'Failed to send verification email. Please try again.';
+            $_SESSION['registration_errors'] = $errors;
+            header('Location: register.php');
+            exit;
+        }
+        // Store registration data in session
+        $_SESSION['pending_registration'] = [
+            'type' => 'student',
+            'data' => [
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'student_id' => $student_id,
+                'email' => $email,
+                'id_number' => $id_number,
+                'phone_number' => $phone_number,
+                'department' => $department,
+                'agreed_terms' => $agreed_terms,
+                'password' => $hashed_password
+            ]
+        ];
+        header('Location: verify_email.php');
+        exit;
     }
 
     // If there are errors, store them in session and redirect back to registration page

@@ -1,6 +1,7 @@
 <?php
 require_once '../config/session_config.php';
 require_once '../config/database.php';
+require_once __DIR__ . '/../../includes/email_helper.php';
 
 // Check if database connection is working
 if (!isset($conn) || $conn->connect_error) {
@@ -81,6 +82,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute();
                     $stmt->close();
                 }
+                // Fetch admin email and name
+                $stmt = $conn->prepare("SELECT email, first_name, last_name FROM users WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                $stmt->execute();
+                $stmt->bind_result($email, $first_name, $last_name);
+                $stmt->fetch();
+                $stmt->close();
+                if ($email) {
+                    $subject = 'Your Admin Account Has Been Approved!';
+                    $body = "Dear $first_name,<br><br>Your admin account has been approved! You can now log in and access the system.<br><br>Thank you for being part of the STVC Election System.<br><br>Best regards,<br>STVC Election System Team";
+                    sendSystemEmail($email, $subject, $body, $first_name);
+                }
             }
             header('Location: manage_accounts.php?success=approved');
             exit();
@@ -104,6 +117,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->bind_param("i", $student_id);
                     $stmt->execute();
                     $stmt->close();
+                }
+                // Fetch student email and name
+                $stmt = $conn->prepare("SELECT email, first_name, last_name FROM students WHERE id = ?");
+                $stmt->bind_param("i", $student_id);
+                $stmt->execute();
+                $stmt->bind_result($email, $first_name, $last_name);
+                $stmt->fetch();
+                $stmt->close();
+                if ($email) {
+                    $subject = 'Your Student Account Has Been Approved!';
+                    $body = "Dear $first_name,<br><br>Your student account has been approved! You can now log in and participate in the election system.<br><br>Thank you for being part of the STVC Election System.<br><br>Best regards,<br>STVC Election System Team";
+                    sendSystemEmail($email, $subject, $body, $first_name);
                 }
             }
             header('Location: manage_accounts.php?success=student_approved');

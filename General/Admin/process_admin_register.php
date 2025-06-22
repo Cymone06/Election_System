@@ -1,6 +1,7 @@
 <?php
 require_once '../config/session_config.php';
 require_once '../config/database.php';
+require_once __DIR__ . '/../includes/email_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF Protection
@@ -71,39 +72,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Registration logic
     if (empty($errors)) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        // Check if there is any admin or super_admin in the system
-        $row = fetch_row('SELECT id FROM users WHERE role = "admin" OR role = "super_admin" LIMIT 1');
-        $is_first_admin = ($row === null);
-        if ($is_first_admin) {
-            // First admin becomes super_admin
-            $new_id = insert_data('INSERT INTO users (admin_id, email, phone_number, password, first_name, last_name, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, "super_admin", "active", NOW())', 'ssssss', [$adminId, $email, $phone, $hashedPassword, $firstName, $lastName]);
-            if ($new_id) {
-                session_regenerate_id(true);
-                $_SESSION['user_id'] = $new_id;
-                $_SESSION['email'] = $email;
-                $_SESSION['first_name'] = $firstName;
-                $_SESSION['last_name'] = $lastName;
-                $_SESSION['user_type'] = 'super_admin';
-                $_SESSION['is_admin'] = true;
-                $_SESSION['is_super_admin'] = true;
-                unset($_SESSION['csrf_token']);
-                header('Location: admin_dashboard.php');
-                exit;
-            } else {
-                $errors[] = 'Failed to create super admin. Please try again.';
-            }
-        } else {
-            // All subsequent admins are regular admins
-            $new_id = insert_data('INSERT INTO users (admin_id, email, phone_number, password, first_name, last_name, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, "admin", "pending", NOW())', 'ssssss', [$adminId, $email, $phone, $hashedPassword, $firstName, $lastName]);
-            if ($new_id) {
-                $_SESSION['success'] = 'Admin account created successfully! Your account is pending approval by the Super Admin.';
-                unset($_SESSION['csrf_token']);
-                header('Location: admin_register.php');
-                exit;
-            } else {
-                $errors[] = 'Failed to create admin. Please try again.';
-            }
+        // Generate verification code
+        $verification_code = random_int(100000, 999999);
+        $expires_at = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        // Store code in email_verifications
+        $stmt = $conn->prepare('INSERT INTO email_verifications (email, code, expires_at) VALUES (?, ?, ?)');
+        $stmt->bind_param('sss', $email, $verification_code, $expires_at);
+        $stmt->execute();
+        $stmt->close();
+        // Send code via email (PHPMailer)
+        $subject = 'Your Email Verification Code';
+        $body = "Your verification code is: <b>$verification_code</b> (valid for 10 minutes)";
+        if (!sendSystemEmail($email, $subject, $body, $firstName)) {
+            $errors[] = 'Failed to send verification email. Please try again.';
+            $_SESSION['errors'] = $errors;
+            header('Location: admin_register.php');
+            exit;
         }
+        // Store registration data in session
+        $_SESSION['pending_registration'] = [
+            'type' => 'admin',
+            'data' => [
+                'firstName' => $firstName,
+                'lastName' => $lastName,
+                'email' => $email,
+                'adminId' => $adminId,
+                'phone' => $phone,
+                'password' => $hashedPassword
+            ]
+        ];
+        header('Location: ../verify_email.php');
+        exit;
     }
 
     // If errors, store and redirect

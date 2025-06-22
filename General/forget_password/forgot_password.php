@@ -4,6 +4,7 @@ use PHPMailer\PHPMailer\Exception;
 require '../../vendor/autoload.php';
 session_start();
 require_once '../config/connect.php';
+require_once __DIR__ . '/../includes/email_helper.php';
 
 $message = '';
 $message_type = '';
@@ -25,26 +26,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $result = $stmt->get_result();
         
         if ($result->num_rows > 0) {
-            $user = $result->fetch_assoc();
-            $user_name = $user['first_name'] . ' ' . $user['last_name'];
-            
-            // Generate 6-digit code and expiry (10 min)
-            $code = generateVerificationCode();
-            $expires = time() + 600; // 10 minutes
-            
-            // Store in session
-            $_SESSION['fp_code'] = $code;
-            $_SESSION['fp_code_expires'] = $expires;
-            $_SESSION['fp_user_id'] = $user['id'];
-            $_SESSION['fp_user_email'] = $email;
-            $_SESSION['fp_user_name'] = $user_name;
-            $_SESSION['fp_user_type'] = 'student';
-            
-            // Send code to email
-            sendVerificationCodeSMTP($email, $code, $user_name);
-            
-            header('Location: verify_code.php');
-            exit();
+            // Check resend limit (3 per day)
+            $stmt2 = $conn->prepare("SELECT COUNT(*) as cnt FROM password_resets WHERE email = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)");
+            $stmt2->bind_param("s", $email);
+            $stmt2->execute();
+            $res2 = $stmt2->get_result();
+            $row2 = $res2->fetch_assoc();
+            $stmt2->close();
+            if ($row2['cnt'] >= 3) {
+                $message = 'You have reached the maximum number of password reset requests for today. Please try again tomorrow.';
+                $message_type = 'error';
+            } else {
+                $user = $result->fetch_assoc();
+                $user_name = $user['first_name'] . ' ' . $user['last_name'];
+                // Generate 6-digit code and expiry (10 min)
+                $code = generateVerificationCode();
+                $expires = time() + 600; // 10 minutes
+                // Store in session
+                $_SESSION['fp_code'] = $code;
+                $_SESSION['fp_code_expires'] = $expires;
+                $_SESSION['fp_user_id'] = $user['id'];
+                $_SESSION['fp_user_email'] = $email;
+                $_SESSION['fp_user_name'] = $user_name;
+                $_SESSION['fp_user_type'] = 'student';
+                // Log the reset request in password_resets
+                $stmt3 = $conn->prepare("INSERT INTO password_resets (email, token, expires_at, created_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW())");
+                $stmt3->bind_param("ss", $email, $code);
+                $stmt3->execute();
+                $stmt3->close();
+                // Send code to email
+                sendVerificationCodeSMTP($email, $code, $user_name);
+                header('Location: verify_code.php');
+                exit();
+            }
         } else {
             $message = 'No account found with that email address.';
             $message_type = 'error';
@@ -57,35 +71,9 @@ function generateVerificationCode() {
 }
 
 function sendVerificationCodeSMTP($to_email, $code, $user_name) {
-    $from_email = 'semetvcs@gmail.com';
-    $from_name = 'STVC Election System';
-    $smtp_host = 'smtp.gmail.com';
-    $smtp_username = 'semetvcs@gmail.com';
-    $smtp_password = 'vtfoklbfskrsjlms'; // Inserted Gmail App Password (no spaces)
-    $smtp_port = 587;
     $subject = 'Verification Code - STVC Election System';
     $message = getVerificationCodeTemplate($code, $user_name);
-
-    $mail = new PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host       = $smtp_host;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $smtp_username;
-        $mail->Password   = $smtp_password;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = $smtp_port;
-        $mail->setFrom($from_email, $from_name);
-        $mail->addAddress($to_email);
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body    = $message;
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        // Optionally log $mail->ErrorInfo
-        return false;
-    }
+    return sendSystemEmail($to_email, $subject, $message, $user_name);
 }
 
 function getVerificationCodeTemplate($code, $user_name) {

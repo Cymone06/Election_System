@@ -248,6 +248,12 @@ unset($_SESSION['errors']);
                 </button>
             </form>
 
+            <div class="text-center mt-3">
+                <a href="../forget_password/forgot_password.php" class="text-decoration-none text-primary">
+                    <i class="fas fa-key me-1"></i>Forgot Password?
+                </a>
+            </div>
+
             <div class="register-link">
                 <a href="admin_register.php">
                     <i class="fas fa-user-plus me-1"></i>Register New Admin Account
