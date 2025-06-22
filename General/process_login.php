@@ -56,6 +56,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         header('Location: login_breach.php');
                         exit;
                     }
+                    // After successful login, check for new device
+                    $device = $_SERVER['HTTP_USER_AGENT'];
+                    $ip = $_SERVER['REMOTE_ADDR'];
+                    $location = getLocationFromIP($ip);
+                    $time = date('Y-m-d h:i A');
+                    $student_id = $_SESSION['student_db_id'];
+                    $session_id = session_id();
+                    // Check if this device/session is new (not in user_sessions)
+                    $stmt = $conn->prepare("SELECT COUNT(*) FROM user_sessions WHERE user_id = ? AND user_type = 'student' AND session_id = ?");
+                    $stmt->bind_param("is", $student_id, $session_id);
+                    $stmt->execute();
+                    $stmt->bind_result($session_count);
+                    $stmt->fetch();
+                    $stmt->close();
+                    if ($session_count == 0) {
+                        $msg_title = "New Device Login Detected";
+                        $msg_content = "A login to your account was detected from a new device.<br><b>Device:</b> $device<br><b>Location:</b> $location<br><b>Time:</b> $time<br>If this was not you, <a href='reset_activity.php'>click here</a> to log out from all devices and change your password.";
+                        $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'warning', ?, ?)");
+                        $stmt_msg->bind_param("iss", $student_id, $msg_title, $msg_content);
+                        $stmt_msg->execute();
+                        $stmt_msg->close();
+                    }
                     header('Location: dashboard.php');
                     exit;
                 } else {
@@ -78,5 +100,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // If not a POST request, redirect to login page
     header('Location: login.php');
     exit;
+}
+
+function getLocationFromIP($ip) {
+    $url = "http://ip-api.com/json/" . $ip;
+    $response = @file_get_contents($url);
+    if ($response) {
+        $data = json_decode($response, true);
+        if ($data && $data['status'] === 'success') {
+            return $data['city'] . ', ' . $data['regionName'] . ', ' . $data['country'];
+        }
+    }
+    return 'Unknown Location';
 }
 ?> 

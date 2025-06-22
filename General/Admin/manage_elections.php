@@ -69,6 +69,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("s", $portal_status);
         $stmt->execute();
         $stmt->close();
+        // Send notifications to all students when portal is opened or closed
+        if ($portal_status === 'open') {
+            // Check if a message for this event was already sent today
+            $check = $conn->query("SELECT COUNT(*) as cnt FROM messages WHERE title = 'Application Portal Opened' AND created_at >= CURDATE()");
+            $row = $check->fetch_assoc();
+            if ($row['cnt'] == 0) {
+                $students = $conn->query("SELECT id FROM students");
+                while ($student = $students->fetch_assoc()) {
+                    $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'info', ?, ?)");
+                    $msg_title = "Application Portal Opened";
+                    $msg_content = "The application portal is now open. Submit your application before the deadline.";
+                    $stmt_msg->bind_param("iss", $student['id'], $msg_title, $msg_content);
+                    $stmt_msg->execute();
+                    $stmt_msg->close();
+                }
+            }
+        } elseif ($portal_status === 'closed') {
+            $check = $conn->query("SELECT COUNT(*) as cnt FROM messages WHERE title = 'Application Portal Closed' AND created_at >= CURDATE()");
+            $row = $check->fetch_assoc();
+            if ($row['cnt'] == 0) {
+                $students = $conn->query("SELECT id FROM students");
+                while ($student = $students->fetch_assoc()) {
+                    $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'info', ?, ?)");
+                    $msg_title = "Application Portal Closed";
+                    $msg_content = "The application portal is now closed. Thank you for your interest.";
+                    $stmt_msg->bind_param("iss", $student['id'], $msg_title, $msg_content);
+                    $stmt_msg->execute();
+                    $stmt_msg->close();
+                }
+            }
+        }
     }
 }
 

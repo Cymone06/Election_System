@@ -298,6 +298,28 @@ if ($is_super_admin) {
                          </div>
                     </div>
 
+                    <!-- Remove My Messages card and add Send Message and Inbox cards -->
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="action-card text-center d-flex flex-column h-100">
+                            <div class="flex-grow-1">
+                                <i class="fas fa-paper-plane fa-3x text-primary mb-3"></i>
+                                <h5>Send Message</h5>
+                                <p class="text-muted">Send announcements or notifications to students, admins, or all users.</p>
+                            </div>
+                            <a href="send_message.php" class="btn btn-admin mt-3 align-self-start">Go to Send Message</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="action-card text-center d-flex flex-column h-100">
+                            <div class="flex-grow-1">
+                                <i class="fas fa-inbox fa-3x text-primary mb-3"></i>
+                                <h5>Inbox</h5>
+                                <p class="text-muted">View and reply to all received messages and conversations.</p>
+                            </div>
+                            <a href="admin_messages.php" class="btn btn-admin mt-3 align-self-start">Go to Inbox</a>
+                        </div>
+                    </div>
+
                     <?php if ($is_super_admin): ?>
                     <div class="col-md-4 mb-4">
                         <div class="action-card text-center d-flex flex-column h-100">

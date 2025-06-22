@@ -316,4 +316,42 @@ CREATE TABLE IF NOT EXISTS reviews (
     content TEXT NOT NULL,
     status ENUM('pending','approved') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table for student messages
+CREATE TABLE IF NOT EXISTS messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    type ENUM('info','success','warning','danger') DEFAULT 'info',
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- Table for admin-to-admin messages
+CREATE TABLE IF NOT EXISTS admin_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_admin_id INT NOT NULL,
+    recipient_admin_id INT NOT NULL,
+    type ENUM('info','success','warning','danger') DEFAULT 'info',
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_admin_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_admin_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Table for threaded replies to messages (admin replies only)
+CREATE TABLE IF NOT EXISTS message_replies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    message_type ENUM('student','admin') NOT NULL,
+    message_id INT NOT NULL,
+    sender_admin_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_admin_id) REFERENCES users(id) ON DELETE CASCADE
+    -- message_id references messages.id or admin_messages.id depending on message_type
 ); 

@@ -15,6 +15,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['review_id'], $_POST['
         $stmt->bind_param('i', $review_id);
         $stmt->execute();
         $stmt->close();
+
+        // After approving the review, send a message to the student
+        $stmt_student = $conn->prepare("SELECT student_id FROM reviews WHERE id = ?");
+        $stmt_student->bind_param("i", $review_id);
+        $stmt_student->execute();
+        $stmt_student->bind_result($student_id);
+        $stmt_student->fetch();
+        $stmt_student->close();
+        if ($student_id) {
+            $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'success', ?, ?)");
+            $msg_title = "Review Approved";
+            $msg_content = "Your review has been approved and is now visible to others. Thank you for your feedback!";
+            $stmt_msg->bind_param("iss", $student_id, $msg_title, $msg_content);
+            $stmt_msg->execute();
+            $stmt_msg->close();
+        }
     } elseif ($_POST['action'] === 'delete') {
         // --- Start Secret Archival ---
         // 1. Fetch the full record before deleting

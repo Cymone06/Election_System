@@ -89,6 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['application_id'], $_P
             $insert->close();
         }
         $check->close();
+        // After approving the application, send a message to the student
+        $stmt_student = $conn->prepare("SELECT student_id FROM applications WHERE id = ?");
+        $stmt_student->bind_param("i", $application_id);
+        $stmt_student->execute();
+        $stmt_student->bind_result($student_id);
+        $stmt_student->fetch();
+        $stmt_student->close();
+        if ($student_id) {
+            $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'success', ?, ?)");
+            $msg_title = "Application Approved";
+            $msg_content = "Congratulations! Your application has been approved and is now waiting for vetting approval.";
+            $stmt_msg->bind_param("iss", $student_id, $msg_title, $msg_content);
+            $stmt_msg->execute();
+            $stmt_msg->close();
+        }
     } elseif ($action === 'reject') {
         $stmt = $conn->prepare("UPDATE applications SET status = 'rejected' WHERE id = ?");
         $stmt->bind_param('i', $application_id);
@@ -116,6 +131,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['application_id'], $_P
     }
     header('Location: manage_applications.php');
     exit();
+}
+
+// When the application portal is opened, send a message to all students
+if (isset($_POST['open_portal'])) {
+    // Check if a message for this event was already sent (avoid duplicates)
+    $check = $conn->query("SELECT COUNT(*) as cnt FROM messages WHERE title = 'Application Portal Opened' AND created_at >= CURDATE()");
+    $row = $check->fetch_assoc();
+    if ($row['cnt'] == 0) {
+        $students = $conn->query("SELECT id FROM students");
+        while ($student = $students->fetch_assoc()) {
+            $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'info', ?, ?)");
+            $msg_title = "Application Portal Opened";
+            $msg_content = "The application portal is now open. Submit your application before the deadline.";
+            $stmt_msg->bind_param("iss", $student['id'], $msg_title, $msg_content);
+            $stmt_msg->execute();
+            $stmt_msg->close();
+        }
+    }
+}
+
+// When the application portal is closed, send a message to all students
+if (isset($_POST['close_portal'])) {
+    $check = $conn->query("SELECT COUNT(*) as cnt FROM messages WHERE title = 'Application Portal Closed' AND created_at >= CURDATE()");
+    $row = $check->fetch_assoc();
+    if ($row['cnt'] == 0) {
+        $students = $conn->query("SELECT id FROM students");
+        while ($student = $students->fetch_assoc()) {
+            $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'info', ?, ?)");
+            $msg_title = "Application Portal Closed";
+            $msg_content = "The application portal is now closed. Thank you for your interest.";
+            $stmt_msg->bind_param("iss", $student['id'], $msg_title, $msg_content);
+            $stmt_msg->execute();
+            $stmt_msg->close();
+        }
+    }
 }
 
 // Fetch all applications with position name

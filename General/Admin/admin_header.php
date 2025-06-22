@@ -15,6 +15,18 @@ $stmt->bind_param("i", $admin_id);
 $stmt->execute();
 $admin = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+
+// Count unread admin messages for the logged-in admin
+function get_unread_admin_message_count($conn, $admin_id) {
+    $stmt = $conn->prepare("SELECT COUNT(*) as unread_count FROM admin_messages WHERE recipient_admin_id = ? AND is_read = 0");
+    $stmt->bind_param("i", $admin_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $stmt->close();
+    return (int)($row['unread_count'] ?? 0);
+}
+$unread_admin_count = get_unread_admin_message_count($conn, $admin_id);
 ?>
 
 <!DOCTYPE html>
@@ -277,6 +289,9 @@ $stmt->close();
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="manage_accounts.php"><i class="fas fa-users me-1"></i> Users</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="admin_messages.php"><i class="fas fa-inbox me-1"></i> Inbox<?php if ($unread_admin_count > 0): ?><span class="badge bg-danger ms-1"><?php echo $unread_admin_count; ?></span><?php endif; ?></a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">

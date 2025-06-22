@@ -144,6 +144,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param("i", $applicationId);
                 $stmt->execute();
 
+                // After successful application insert, send a message to the student
+                $stmt_msg = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, 'info', ?, ?)");
+                $msg_title = "Application Submitted";
+                $msg_content = "Your application has been submitted and is waiting for approval. You will be notified once it is reviewed.";
+                $stmt_msg->bind_param("iss", $student_db_id, $msg_title, $msg_content);
+                $stmt_msg->execute();
+                $stmt_msg->close();
+
                 // Commit transaction
                 $conn->commit();
 
