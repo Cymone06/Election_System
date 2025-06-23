@@ -841,13 +841,10 @@ ${<?php echo json_encode(array_map(function($dept) {
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="text-white mb-3">
-                        <i class="fas fa-vote-yea me-2"></i>
-                        STVC Election System
-                    </h5>
-                    <p class="text-white-50">
-                        Empowering students to participate in democratic processes through secure and transparent online voting.
-                    </p>
+                    <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
+                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <span class="h5 mb-0">STVC Election System - Admin</span>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <h6 class="text-white mb-3">Quick Links</h6>

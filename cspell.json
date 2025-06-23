@@ -1,0 +1,36 @@
+{
+    "version": "0.2",
+    "language": "en",
+    "words": [
+        "STVC",
+        "phpmailer",
+        "xoauth",
+        "cpanel",
+        "fontawesome",
+        "jsdelivr",
+        "phpsessid",
+        "autofocus",
+        "datetime",
+        "XAMPP",
+        "htdocs",
+        "mysqli",
+        "utf8mb4",
+        "varchar",
+        "AUTO_INCREMENT",
+        "CURRENT_TIMESTAMP",
+        "tiktok",
+        "instagram",
+        "facebook",
+        "twitter",
+        "linkedin",
+        "phps",
+        "endregion"
+    ],
+    "ignorePaths": [
+        "node_modules/**",
+        "vendor/**",
+        "*.lock",
+        "*.sql",
+        "General/uploads/**"
+    ]
+} 

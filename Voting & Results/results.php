@@ -66,6 +66,21 @@ if (!$election) {
 
         <?php if (!empty($results)): ?>
             <?php foreach ($results as $position => $candidates): ?>
+                <?php
+                // Determine winner(s)
+                $winner_votes = 0;
+                if (!empty($candidates)) {
+                    $winner_votes = max(array_column($candidates, 'vote_count'));
+                }
+                $winners = [];
+                if ($winner_votes > 0) {
+                    foreach ($candidates as $candidate) {
+                        if ($candidate['vote_count'] == $winner_votes) {
+                            $winners[] = $candidate;
+                        }
+                    }
+                }
+                ?>
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-primary text-white">
                         <h4 class="mb-0"><i class="fas fa-user-tie me-2"></i><?php echo htmlspecialchars($position); ?></h4>
@@ -73,12 +88,27 @@ if (!$election) {
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
                             <?php foreach ($candidates as $candidate): ?>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <?php
+                                $is_winner = false;
+                                if ($winner_votes > 0 && $candidate['vote_count'] == $winner_votes) {
+                                    $is_winner = true;
+                                }
+                                ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center <?php echo $is_winner ? 'list-group-item-success' : ''; ?>">
                                     <div>
                                         <img src="../General/uploads/applications/<?php echo htmlspecialchars($candidate['image1']); ?>" class="me-3" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">
                                         <strong><?php echo htmlspecialchars($candidate['first_name'] . ' ' . $candidate['last_name']); ?></strong>
                                     </div>
-                                    <span class="badge bg-success rounded-pill fs-6"><?php echo $candidate['vote_count']; ?> Votes</span>
+                                    <div>
+                                        <?php if ($is_winner): ?>
+                                            <?php if (count($winners) > 1): ?>
+                                                <span class="badge bg-warning text-dark me-2">Tie</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-success me-2"><i class="fas fa-crown me-1"></i>Winner</span>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                        <span class="badge bg-primary rounded-pill fs-6"><?php echo $candidate['vote_count']; ?> Votes</span>
+                                    </div>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

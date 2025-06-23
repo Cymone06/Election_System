@@ -218,10 +218,11 @@ if ($is_super_admin) {
                 <div class="row">
                     <!-- Manage Applications -->
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="action-card h-100 d-flex flex-column justify-content-between">
-                            <div>
-                                <h5><i class="fas fa-file-alt me-2 text-primary"></i>Manage Applications</h5>
-                                <p>Review, approve, or reject candidate applications.</p>
+                        <div class="action-card text-center d-flex flex-column h-100">
+                            <div class="flex-grow-1">
+                                <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                                <h5>Manage Applications</h5>
+                                <p class="text-muted">Review, approve, or reject candidate applications.</p>
                             </div>
                             <a href="manage_applications.php" class="btn btn-admin mt-3 align-self-start">Go to Applications</a>
                         </div>
@@ -265,10 +266,11 @@ if ($is_super_admin) {
 
                     <!-- Manage Current Leaders -->
                     <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="action-card h-100 d-flex flex-column justify-content-between">
-                            <div>
-                                <h5><i class="fas fa-user-tie me-2 text-warning"></i>Manage Current Leaders</h5>
-                                <p>Update the list of the institution's current leaders.</p>
+                        <div class="action-card text-center d-flex flex-column h-100">
+                            <div class="flex-grow-1">
+                                <i class="fas fa-user-tie fa-3x text-warning mb-3"></i>
+                                <h5>Manage Current Leaders</h5>
+                                <p class="text-muted">Update the list of the institution's current leaders.</p>
                             </div>
                             <a href="manage_current_candidates.php" class="btn btn-admin mt-3 align-self-start">Go to Leaders</a>
                         </div>
@@ -351,13 +353,10 @@ if ($is_super_admin) {
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="text-white mb-3">
-                        <i class="fas fa-vote-yea me-2"></i>
-                        STVC Election System
-                    </h5>
-                    <p class="text-white-50">
-                        Empowering students to participate in democratic processes through secure and transparent online voting.
-                    </p>
+                    <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
+                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <span class="h5 mb-0">STVC Election System - Admin</span>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <h6 class="text-white mb-3">Quick Links</h6>

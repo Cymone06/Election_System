@@ -207,8 +207,9 @@ if ($result) {
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="admin_dashboard.php">
-                <i class="fas fa-vote-yea me-2"></i>STVC Election System - Admin
+            <a class="navbar-brand d-flex align-items-center" href="admin_dashboard.php">
+                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System - Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -227,85 +228,93 @@ if ($result) {
     </nav>
     <!-- Main Content -->
     <div class="container main-content py-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="m-0 text-center section-title">All Applications</h2>
-            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#resetConfirmModal">
-                <i class="fas fa-trash-alt me-2"></i>Reset All Applications
-            </button>
-        </div>
-
-        <?php if (isset($_SESSION['success_message'])): ?>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="action-card text-center d-flex flex-column h-100 mb-4 p-0 overflow-hidden" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 15px;">
+            <div style="background: linear-gradient(135deg, #2c3e50, #3498db); padding: 2rem 1rem 1.5rem 1rem;">
+                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:48px;width:auto;margin-bottom:10px;">
+                <h4 class="text-white mb-0">STVC Election System - Admin</h4>
             </div>
-        <?php endif; ?>
-        <?php if (isset($_SESSION['error_message'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <?php endif; ?>
-
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle" id="applicationsTable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Student ID</th>
-                        <th>Position</th>
-                        <th>Status</th>
-                        <th>Vetting</th>
-                        <th>Submitted</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($applications)): ?>
-                        <tr><td colspan="10" class="text-center text-muted">No applications found.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($applications as $i => $app): ?>
+            <div class="flex-grow-1 p-4">
+                <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                <h5>Manage Applications</h5>
+                <p class="text-muted">Review, approve, or reject candidate applications.</p>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#resetConfirmModal">
+                        <i class="fas fa-trash-alt me-2"></i>Reset All Applications
+                    </button>
+                </div>
+                <?php if (isset($_SESSION['success_message'])): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endif; ?>
+                <?php if (isset($_SESSION['error_message'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <?php echo $_SESSION['error_message']; unset($_SESSION['error_message']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endif; ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle" id="applicationsTable">
+                        <thead>
                             <tr>
-                                <td><?php echo $i+1; ?></td>
-                                <td>
-                                    <?php if (!empty($app['image1'])): ?>
-                                        <img src="../uploads/applications/<?php echo htmlspecialchars($app['image1']); ?>" class="app-img" alt="Applicant Image">
-                                    <?php else: ?>
-                                        <span class="text-muted">No Image</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?></td>
-                                <td><?php echo htmlspecialchars($app['email']); ?></td>
-                                <td><?php echo htmlspecialchars($app['student_id']); ?></td>
-                                <td><?php echo htmlspecialchars($app['position_name']); ?></td>
-                                <td><span class="status-badge status-<?php echo htmlspecialchars($app['status']); ?>"><?php echo ucfirst($app['status']); ?></span></td>
-                                <td><span class="status-badge vetting-<?php echo htmlspecialchars($app['vetting_status']); ?>"><?php echo ucfirst($app['vetting_status']); ?></span></td>
-                                <td><?php echo date('M d, Y H:i', strtotime($app['created_at'])); ?></td>
-                                <td>
-                                    <?php if ($app['status'] === 'pending'): ?>
-                                        <form method="POST" class="d-inline">
-                                            <input type="hidden" name="application_id" value="<?php echo $app['id']; ?>">
-                                            <button type="submit" name="action" value="approve" class="btn btn-sm btn-success mb-1">Approve</button>
-                                            <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger mb-1">Reject</button>
-                                        </form>
-                                    <?php elseif ($app['status'] === 'approved' && $app['vetting_status'] === 'pending'): ?>
-                                        <form method="POST" class="d-inline">
-                                            <input type="hidden" name="application_id" value="<?php echo $app['id']; ?>">
-                                            <button type="submit" name="action" value="verify" class="btn btn-sm btn-primary mb-1">Verify (Vetting)</button>
-                                            <button type="submit" name="action" value="vet_reject" class="btn btn-sm btn-warning mb-1">Reject (Vetting)</button>
-                                        </form>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
+                                <th>#</th>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Student ID</th>
+                                <th>Position</th>
+                                <th>Status</th>
+                                <th>Vetting</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($applications)): ?>
+                                <tr><td colspan="10" class="text-center text-muted">No applications found.</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($applications as $i => $app): ?>
+                                    <tr>
+                                        <td><?php echo $i+1; ?></td>
+                                        <td>
+                                            <?php if (!empty($app['image1'])): ?>
+                                                <img src="../uploads/applications/<?php echo htmlspecialchars($app['image1']); ?>" class="app-img" alt="Applicant Image">
+                                            <?php else: ?>
+                                                <span class="text-muted">No Image</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($app['email']); ?></td>
+                                        <td><?php echo htmlspecialchars($app['student_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($app['position_name']); ?></td>
+                                        <td><span class="status-badge status-<?php echo htmlspecialchars($app['status']); ?>"><?php echo ucfirst($app['status']); ?></span></td>
+                                        <td><span class="status-badge vetting-<?php echo htmlspecialchars($app['vetting_status']); ?>"><?php echo ucfirst($app['vetting_status']); ?></span></td>
+                                        <td><?php echo date('M d, Y H:i', strtotime($app['created_at'])); ?></td>
+                                        <td>
+                                            <?php if ($app['status'] === 'pending'): ?>
+                                                <form method="POST" class="d-inline">
+                                                    <input type="hidden" name="application_id" value="<?php echo $app['id']; ?>">
+                                                    <button type="submit" name="action" value="approve" class="btn btn-sm btn-success mb-1">Approve</button>
+                                                    <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger mb-1">Reject</button>
+                                                </form>
+                                            <?php elseif ($app['status'] === 'approved' && $app['vetting_status'] === 'pending'): ?>
+                                                <form method="POST" class="d-inline">
+                                                    <input type="hidden" name="application_id" value="<?php echo $app['id']; ?>">
+                                                    <button type="submit" name="action" value="verify" class="btn btn-sm btn-primary mb-1">Verify (Vetting)</button>
+                                                    <button type="submit" name="action" value="vet_reject" class="btn btn-sm btn-warning mb-1">Reject (Vetting)</button>
+                                                </form>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -338,13 +347,10 @@ if ($result) {
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="text-white mb-3">
-                        <i class="fas fa-vote-yea me-2"></i>
-                        STVC Election System
-                    </h5>
-                    <p class="text-white-50">
-                        Empowering students to participate in democratic processes through secure and transparent online voting.
-                    </p>
+                    <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
+                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <span class="h5 mb-0">STVC Election System - Admin</span>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <h6 class="text-white mb-3">Quick Links</h6>

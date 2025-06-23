@@ -3,5 +3,8 @@
     "description": "STVC Election System with PHPMailer for SMTP email.",
     "require": {
         "phpmailer/phpmailer": "^6.10"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
     }
 }

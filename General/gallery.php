@@ -143,9 +143,9 @@ if ($stmt = $conn->prepare("SELECT filename, description, uploaded_at FROM galle
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="index.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System
+            <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
+                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -170,7 +170,7 @@ if ($stmt = $conn->prepare("SELECT filename, description, uploaded_at FROM galle
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle user-dropdown" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <div class="user-avatar" style="padding:0;overflow:hidden;width:36px;height:36px;">
+                                <div class="user-avatar" style="padding:0;overflow:hidden;width:36px;height:36px;display:inline-block;vertical-align:middle;">
                                     <img src="<?php echo $profile_pic_path; ?>" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
                                 </div>
                                 <?php echo htmlspecialchars($user_info['first_name']); ?>

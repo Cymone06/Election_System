@@ -293,9 +293,9 @@ $stmt->close();
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="index.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System
+            <a class="navbar-brand d-flex align-items-center" href="index.php">
+                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -303,7 +303,7 @@ $stmt->close();
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="dashboard.php"><i class="fas fa-home me-1"></i> Dashboard</a>
+                        <a class="nav-link" href="index.php"><i class="fas fa-home me-1"></i> Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="positions.php"><i class="fas fa-briefcase me-1"></i> Positions</a>
@@ -317,11 +317,21 @@ $stmt->close();
                     <li class="nav-item">
                         <a class="nav-link" href="my_messages.php"><i class="fas fa-envelope me-1"></i> My Messages</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="profile.php"><i class="fas fa-user me-1"></i> Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="logout.php"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle user-dropdown" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <div class="user-avatar" style="padding:0;overflow:hidden;width:36px;height:36px;display:inline-block;vertical-align:middle;">
+                                <img src="<?php echo $profile_pic_path; ?>" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                            </div>
+                            <?php echo htmlspecialchars($user['first_name']); ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="application.php"><i class="fas fa-edit me-2"></i>Apply for Position</a></li>
+                            <li><a class="dropdown-item" href="positions.php"><i class="fas fa-list me-2"></i>View Positions</a></li>
+                            <li><a class="dropdown-item" href="news.php"><i class="fas fa-newspaper me-2"></i>News & Q&A</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
                     </li>
                 </ul>
             </div>

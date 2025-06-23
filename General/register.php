@@ -70,9 +70,9 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="index.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System
+            <a class="navbar-brand d-flex align-items-center" href="index.php">
+                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -142,8 +142,19 @@
 
                             <div class="mb-3">
                                 <label for="phone_number" class="form-label required-field">Phone Number</label>
-                                <input type="text" class="form-control" id="phone_number" name="phone_number" required>
+                                <input type="text" class="form-control" id="phone_number" name="phone_number" required value="<?php echo isset($_SESSION['form_data']['phone_number']) ? htmlspecialchars($_SESSION['form_data']['phone_number']) : ''; ?>">
                                 <div class="invalid-feedback">Please enter your phone number.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="gender" class="form-label required-field">Gender</label>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="male" <?php echo (isset($_SESSION['form_data']['gender']) && $_SESSION['form_data']['gender'] === 'male') ? 'selected' : ''; ?>>Male</option>
+                                    <option value="female" <?php echo (isset($_SESSION['form_data']['gender']) && $_SESSION['form_data']['gender'] === 'female') ? 'selected' : ''; ?>>Female</option>
+                                    <option value="other" <?php echo (isset($_SESSION['form_data']['gender']) && $_SESSION['form_data']['gender'] === 'other') ? 'selected' : ''; ?>>Other</option>
+                                </select>
+                                <div class="invalid-feedback">Please select your gender.</div>
                             </div>
 
                             <div class="mb-3">
@@ -161,6 +172,18 @@
                                     <option value="building_technology" <?php echo (isset($_SESSION['form_data']['department']) && $_SESSION['form_data']['department'] === 'building_technology') ? 'selected' : ''; ?>>Building Technology</option>
                                 </select>
                                 <div class="invalid-feedback">Please select your department.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="course_level" class="form-label required-field">Course Level</label>
+                                <select class="form-select" id="course_level" name="course_level" required>
+                                    <option value="">Select Course Level</option>
+                                    <option value="Diploma/Level 6" <?php echo (isset($_SESSION['form_data']['course_level']) && $_SESSION['form_data']['course_level'] === 'Diploma/Level 6') ? 'selected' : ''; ?>>Diploma/Level 6</option>
+                                    <option value="Certificate/Level 5" <?php echo (isset($_SESSION['form_data']['course_level']) && $_SESSION['form_data']['course_level'] === 'Certificate/Level 5') ? 'selected' : ''; ?>>Certificate/Level 5</option>
+                                    <option value="Artisan/Level 3" <?php echo (isset($_SESSION['form_data']['course_level']) && $_SESSION['form_data']['course_level'] === 'Artisan/Level 3') ? 'selected' : ''; ?>>Artisan/Level 3</option>
+                                    <option value="Other" <?php echo (isset($_SESSION['form_data']['course_level']) && $_SESSION['form_data']['course_level'] === 'Other') ? 'selected' : ''; ?>>Other</option>
+                                </select>
+                                <div class="invalid-feedback">Please select your course level.</div>
                             </div>
 
                             <div class="mb-3">

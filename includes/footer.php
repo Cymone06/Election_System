@@ -5,7 +5,7 @@
         <div class="row align-items-center mb-3">
             <div class="col-md-4 text-center text-md-start mb-3 mb-md-0">
                 <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
-                    <i class="fas fa-vote-yea fa-2x me-2"></i>
+                    <img src="../General/uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                     <span class="h5 mb-0">STVC Election System</span>
                 </div>
             </div>
@@ -32,8 +32,8 @@
         <hr class="footer-divider my-3" />
         <div class="row align-items-center">
             <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
-                <span class="footer-contact"><i class="fas fa-envelope me-2"></i>support@stvc.edu</span>
-                <span class="footer-contact ms-3"><i class="fas fa-phone me-2"></i>+123 456 7890</span>
+                <span class="footer-contact"><i class="fas fa-envelope me-2"></i>semestvcs@gmail,com</span>
+                <span class="footer-contact ms-3"><i class="fas fa-phone me-2"></i>+254 741 247 188</span>
             </div>
             <div class="col-md-6 text-center text-md-end">
                 <span class="small">&copy; <?php echo date('Y'); ?> STVC Election System. All rights reserved.</span>

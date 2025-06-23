@@ -1,0 +1,53 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Composer
+composer.phar
+composer.lock
+
+# PHPUnit
+.phpunit.result.cache
+.phpunit.cache/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Log files
+*.log
+/logs/
+
+# Cache files
+/cache/
+
+# Uploaded files and user content
+/General/uploads/applications/*
+/General/uploads/current_candidates/*
+/General/uploads/gallery/*
+/General/uploads/profile_pictures/*
+!General/uploads/applications/.gitkeep
+!General/uploads/current_candidates/.gitkeep
+!General/uploads/gallery/.gitkeep
+!General/uploads/profile_pictures/.gitkeep
+
+# Build files
+/build/
+/dist/
+
+# Test coverage reports
+/coverage/
+/clover.xml
+
+# Local development files
+*.local.php 

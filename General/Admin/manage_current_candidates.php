@@ -118,86 +118,89 @@ if ($result) {
 </head>
 <body>
     <!-- Admin Header -->
-    <div class="admin-header mb-4">
-        <div class="container">
-            <h1 class="mb-2"><i class="fas fa-users me-2"></i>Manage Current Leaders</h1>
-            <p class="mb-0">Upload, view, and manage the current leaders of the institution. The reign start date is shown for each leader.</p>
-        </div>
-    </div>
+  
     <div class="container py-4" style="margin-bottom: 0; padding-bottom: 0;">
         <?php if ($success): ?><div class="alert alert-success"> <?php echo $success; ?> </div><?php endif; ?>
         <?php if ($error): ?><div class="alert alert-danger"> <?php echo $error; ?> </div><?php endif; ?>
-        <form method="POST" enctype="multipart/form-data" class="mb-4 p-3 bg-light rounded shadow-sm">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-2">
-                    <label class="form-label">Name</label>
-                    <input type="text" name="name" class="form-control" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Position</label>
-                    <input type="text" name="position" class="form-control" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Department/Office</label>
-                    <input type="text" name="department" class="form-control" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Hierarchy Order</label>
-                    <input type="number" name="hierarchy_order" class="form-control" min="1" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Image</label>
-                    <input type="file" name="image" class="form-control" accept="image/*" required>
-                </div>
-                <div class="col-md-1">
-                    <button type="submit" name="add_leader" class="btn btn-primary">Add</button>
+        <div class="action-card text-center d-flex flex-column h-100 mb-4 p-0 overflow-hidden" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 15px;">
+            <div style="background: linear-gradient(135deg, #2c3e50, #3498db); padding: 2rem 1rem 1.5rem 1rem;">
+                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:48px;width:auto;margin-bottom:10px;">
+                <h4 class="text-white mb-0">STVC Election System - Admin</h4>
+            </div>
+            <div class="flex-grow-1 p-4">
+                <i class="fas fa-user-tie fa-3x text-warning mb-3"></i>
+                <h5>Manage Current Leaders</h5>
+                <p class="text-muted">Upload, view, and manage the current leaders of the institution. The reign start date is shown for each leader.</p>
+                <form method="POST" enctype="multipart/form-data" class="mb-4">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Position</label>
+                            <input type="text" name="position" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Department/Office</label>
+                            <input type="text" name="department" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Hierarchy Order</label>
+                            <input type="number" name="hierarchy_order" class="form-control" min="1" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Image</label>
+                            <input type="file" name="image" class="form-control" accept="image/*" required>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" name="add_leader" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Department/Office</th>
+                                <th>Hierarchy</th>
+                                <th>Reign Started</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($current_leaders as $leader): ?>
+                                <tr>
+                                    <td><img src="../uploads/current_candidates/<?php echo htmlspecialchars($leader['image']); ?>" style="width:60px;height:60px;object-fit:cover;border-radius:50%;"></td>
+                                    <td><?php echo htmlspecialchars($leader['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($leader['position']); ?></td>
+                                    <td><?php echo htmlspecialchars($leader['department']); ?></td>
+                                    <td><?php echo (int)$leader['hierarchy_order']; ?></td>
+                                    <td><?php echo date('M d, Y', strtotime($leader['created_at'])); ?></td>
+                                    <td>
+                                        <a href="?delete=<?php echo $leader['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this leader?');"><i class="fas fa-trash"></i></a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </form>
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Photo</th>
-                        <th>Name</th>
-                        <th>Position</th>
-                        <th>Department/Office</th>
-                        <th>Hierarchy</th>
-                        <th>Reign Started</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($current_leaders as $leader): ?>
-                        <tr>
-                            <td><img src="../uploads/current_candidates/<?php echo htmlspecialchars($leader['image']); ?>" style="width:60px;height:60px;object-fit:cover;border-radius:50%;"></td>
-                            <td><?php echo htmlspecialchars($leader['name']); ?></td>
-                            <td><?php echo htmlspecialchars($leader['position']); ?></td>
-                            <td><?php echo htmlspecialchars($leader['department']); ?></td>
-                            <td><?php echo (int)$leader['hierarchy_order']; ?></td>
-                            <td><?php echo date('M d, Y', strtotime($leader['created_at'])); ?></td>
-                            <td>
-                                <a href="?delete=<?php echo $leader['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this leader?');"><i class="fas fa-trash"></i></a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
         </div>
     </div>
-        <!-- Footer -->
-        <footer class="footer mt-5">
+    <!-- Footer -->
+    <footer class="footer mt-auto">
         <div class="footer-overlay"></div>
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="text-white mb-3">
-                        <i class="fas fa-vote-yea me-2"></i>
-                        STVC Election System
-                    </h5>
-                    <p class="text-white-50">
-                        Empowering students to participate in democratic processes through secure and transparent online voting.
-                    </p>
+                    <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
+                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <span class="h5 mb-0">STVC Election System - Admin</span>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <h6 class="text-white mb-3">Quick Links</h6>
@@ -244,17 +247,27 @@ if ($result) {
     </footer>
 
     <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            flex: 1 0 auto;
+        }
         .footer {
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" fill="%232c3e50"></path></svg>');
+            margin-top: auto !important;
+            background-image: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1200 120\" preserveAspectRatio=\"none\"><path d=\"M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z\" fill=\"%232c3e50\"></path></svg>');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             position: relative;
-            margin-top: 4rem;
             padding-top: 3rem;
             padding-bottom: 2rem;
         }
-
         .footer-overlay {
             position: absolute;
             top: 0;
@@ -264,26 +277,21 @@ if ($result) {
             background: linear-gradient(135deg, rgba(44, 62, 80, 0.95), rgba(52, 152, 219, 0.9));
             z-index: 1;
         }
-
         .footer .container {
             position: relative;
             z-index: 2;
         }
-
         .footer h5, .footer h6 {
             color: white;
             font-weight: 600;
         }
-
         .footer p, .footer a {
             color: rgba(255, 255, 255, 0.8);
             transition: color 0.3s ease;
         }
-
         .footer a:hover {
             color: white;
         }
-
         .footer .social-links a {
             display: inline-block;
             width: 35px;
@@ -294,17 +302,14 @@ if ($result) {
             line-height: 35px;
             transition: all 0.3s ease;
         }
-
         .footer .social-links a:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-2px);
         }
-
         @media (max-width: 768px) {
             .footer {
                 text-align: center;
             }
-            
             .footer .col-md-4 {
                 margin-bottom: 2rem;
             }

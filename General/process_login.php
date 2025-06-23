@@ -38,8 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // Verify password only if status is active
                 if (password_verify($password, $student['password'])) {
-                    // Set session variables
-                    $_SESSION['student_id'] = $student['student_id'];
+                    // Check if 2FA PIN is set
+                    $stmt2 = $conn->prepare('SELECT two_factor_pin FROM students WHERE id = ?');
+                    $stmt2->bind_param('i', $student['id']);
+                    $stmt2->execute();
+                    $row2 = $stmt2->get_result()->fetch_assoc();
+                    $stmt2->close();
+                    // Set basic session
+                    $_SESSION['student_id'] = $student['id'];
                     $_SESSION['first_name'] = $student['first_name'];
                     $_SESSION['last_name'] = $student['last_name'];
                     $_SESSION['department'] = $student['department'];

@@ -57,8 +57,9 @@ if ($result) {
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background-color: #2c3e50 !important;">
         <div class="container">
-            <a class="navbar-brand" href="index.php">
-                <i class="fas fa-vote-yea me-2"></i>STVC Election System
+            <a class="navbar-brand d-flex align-items-center" href="index.php">
+                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>

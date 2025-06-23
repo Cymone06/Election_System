@@ -285,9 +285,9 @@ try {
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="admin_dashboard.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System - Admin
+            <a class="navbar-brand d-flex align-items-center" href="admin_dashboard.php">
+                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System - Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -304,7 +304,7 @@ try {
                         <a class="nav-link active" href="manage_positions.php"><i class="fas fa-list me-1"></i> Positions</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="manage_users.php"><i class="fas fa-users me-1"></i> Users</a>
+                        <a class="nav-link" href="manage_accounts.php"><i class="fas fa-users me-1"></i> Users</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="../logout.php"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
@@ -623,13 +623,10 @@ try {
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="text-white mb-3">
-                        <i class="fas fa-vote-yea me-2"></i>
-                        STVC Election System
-                    </h5>
-                    <p class="text-white-50">
-                        Empowering students to participate in democratic processes through secure and transparent online voting.
-                    </p>
+                    <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
+                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <span class="h5 mb-0">STVC Election System - Admin</span>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <h6 class="text-white mb-3">Quick Links</h6>
@@ -637,7 +634,7 @@ try {
                         <li><a href="admin_dashboard.php" class="text-white-50 text-decoration-none">Dashboard</a></li>
                         <li><a href="manage_applications.php" class="text-white-50 text-decoration-none">Applications</a></li>
                         <li><a href="manage_positions.php" class="text-white-50 text-decoration-none">Positions</a></li>
-                        <li><a href="manage_users.php" class="text-white-50 text-decoration-none">Users</a></li>
+                        <li><a href="manage_accounts.php" class="text-white-50 text-decoration-none">Users</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">

@@ -44,9 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         // If the election status is set to 'ended', clear the applications table
-        if ($status === 'ended') {
-            clearAllApplicantData($conn);
-        }
+        // if ($status === 'ended') {
+        //     clearAllApplicantData($conn);
+        // }
     } elseif (isset($_POST['delete_election'])) {
         $election_id = $_POST['election_id'];
         
@@ -232,6 +232,11 @@ require_once 'admin_header.php';
                                                     </select>
                                                     <button type="submit" name="update_status" class="btn btn-sm btn-outline-primary">Update</button>
                                                 </form>
+                                                <?php if ($election['status'] === 'ended'): ?>
+                                                    <a href="finalize_results.php?election_id=<?php echo $election['id']; ?>" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to finalize the results? This will process the winners and clear the current election data.');">
+                                                        <i class="fas fa-check-circle"></i> Finalize
+                                                    </a>
+                                                <?php endif; ?>
                                                 <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to move this election to the recycle bin?');">
                                                     <input type="hidden" name="election_id" value="<?php echo $election['id']; ?>">
                                                     <button type="submit" name="delete_election" class="btn btn-sm btn-danger">
@@ -256,13 +261,10 @@ require_once 'admin_header.php';
 <div class="container">
     <div class="row">
         <div class="col-md-4">
-            <h5 class="text-white mb-3">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System
-            </h5>
-            <p class="text-white-50">
-                Empowering students to participate in democratic processes through secure and transparent online voting.
-            </p>
+            <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
+                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="h5 mb-0">STVC Election System - Admin</span>
+            </div>
         </div>
         <div class="col-md-4">
             <h6 class="text-white mb-3">Quick Links</h6>

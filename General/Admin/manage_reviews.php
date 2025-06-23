@@ -84,6 +84,20 @@ $reviews = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            flex: 1 0 auto;
+        }
+        .footer {
+            margin-top: auto !important;
+        }
         body { background: #f8f9fa; }
         .navbar { background-color: #2c3e50; }
         .navbar-brand { font-weight: 600; color: white !important; }
@@ -124,6 +138,7 @@ $reviews = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
                         <th>Name</th>
                         <th>Student ID</th>
                         <th>Review</th>
+                        <th>Rating</th>
                         <th>Status</th>
                         <th>Posted</th>
                         <th>Actions</th>
@@ -131,7 +146,7 @@ $reviews = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
                 </thead>
                 <tbody>
                     <?php if (empty($reviews)): ?>
-                        <tr><td colspan="7" class="text-center text-muted">No reviews found.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted">No reviews found.</td></tr>
                     <?php else: ?>
                         <?php foreach ($reviews as $i => $review): ?>
                             <tr>
@@ -139,6 +154,15 @@ $reviews = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
                                 <td><?php echo htmlspecialchars($review['student_name']); ?></td>
                                 <td><?php echo htmlspecialchars($review['student_id']); ?></td>
                                 <td><?php echo htmlspecialchars($review['content']); ?></td>
+                                <td>
+                                    <?php $rating = isset($review['rating']) ? (int)$review['rating'] : 5; ?>
+                                    <span class="text-warning">
+                                        <?php for ($s = 1; $s <= 5; $s++): ?>
+                                            <i class="fas fa-star<?php echo ($s <= $rating) ? '' : ' text-secondary'; ?>"></i>
+                                        <?php endfor; ?>
+                                    </span>
+                                    <span class="ms-1 small text-muted"><?php echo $rating; ?>/5</span>
+                                </td>
                                 <td><span class="status-badge status-<?php echo htmlspecialchars($review['status']); ?>"><?php echo ucfirst($review['status']); ?></span></td>
                                 <td><?php echo date('M d, Y H:i', strtotime($review['created_at'])); ?></td>
                                 <td>
@@ -163,5 +187,6 @@ $reviews = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <?php include 'admin_footer.php'; ?>
 </body>
 </html> 

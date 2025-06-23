@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /General/Admin/
+Disallow: /General/config/
+Disallow: /General/forget_password/
+Disallow: /vendor/
+Disallow: /includes/
+
+# Disallow sensitive scripts
+Disallow: /General/process_
+Disallow: /General/setup_
+Disallow: /General/test_
+Disallow: /General/verify_
+Disallow: /General/logout.php 

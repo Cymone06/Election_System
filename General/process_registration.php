@@ -16,6 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirmPassword'] ?? '';
     $agreed_terms = isset($_POST['terms']) ? 1 : 0;
+    $gender = trim($_POST['gender'] ?? '');
+    $course_level = trim($_POST['course_level'] ?? '');
 
     // Debug: Log the received data
     error_log("Registration attempt - First Name: $first_name, Last Name: $last_name, Student ID: $student_id, Email: $email");
@@ -55,6 +57,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (!$agreed_terms) {
         $errors[] = 'You must agree to the terms and conditions.';
+    }
+    if (empty($gender)) {
+        $errors[] = 'Gender is required.';
+    }
+    if (empty($course_level)) {
+        $errors[] = 'Course level is required.';
     }
 
     // Check if student ID, email, or ID number already exists
@@ -100,7 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'email' => $email,
                 'id_number' => $id_number,
                 'phone_number' => $phone_number,
+                'gender' => $gender,
                 'department' => $department,
+                'course_level' => $course_level,
                 'agreed_terms' => $agreed_terms,
                 'password' => $hashed_password
             ]
@@ -119,7 +129,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'lastName' => $last_name,
             'studentId' => $student_id,
             'email' => $email,
-            'department' => $department
+            'department' => $department,
+            'gender' => $gender,
+            'course_level' => $course_level,
+            'phone_number' => $phone_number
         ];
         header('Location: register.php');
         exit;

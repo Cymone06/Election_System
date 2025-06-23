@@ -29,7 +29,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $admin = $result->fetch_assoc();
             // Verify password
             if (password_verify($password, $admin['password'])) {
-                // Set session variables
+                // Check if 2FA PIN is set
+                $stmt2 = $conn->prepare('SELECT two_factor_pin FROM users WHERE id = ?');
+                $stmt2->bind_param('i', $admin['id']);
+                $stmt2->execute();
+                $row2 = $stmt2->get_result()->fetch_assoc();
+                $stmt2->close();
+                // Set basic session
                 $_SESSION['user_id'] = $admin['id'];
                 $_SESSION['email'] = $admin['email'];
                 $_SESSION['first_name'] = $admin['first_name'];
@@ -46,8 +52,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: ../login_breach.php');
                     exit;
                 }
-                header('Location: admin_dashboard.php');
-                exit;
+                // 2FA PIN check
+                if (!empty($row2['two_factor_pin'])) {
+                    unset($_SESSION['2fa_verified']);
+                    header('Location: verify_pin.php');
+                    exit;
+                } else {
+                    $_SESSION['2fa_verified'] = true;
+                    header('Location: admin_dashboard.php');
+                    exit;
+                }
             } else {
                 $errors[] = 'Invalid email or password.';
             }

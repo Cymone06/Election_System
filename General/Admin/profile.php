@@ -2,14 +2,11 @@
 require_once '../config/session_config.php';
 require_once '../config/database.php';
 
-// Check if user is logged in and is admin or super_admin
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_type'], ['admin', 'super_admin'])) {
-    header('Location: admin_login.php');
-    exit();
-}
-
-// Handle profile updates
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle POST actions before any output
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['email'])
+) {
     $first_name = $_POST['first_name'];
     $last_name = $_POST['last_name'];
     $email = $_POST['email'];
@@ -45,6 +42,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: profile.php?error=invalid_password');
         exit();
     }
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['enable_2fa'])) {
+        $admin_id = $_SESSION['user_id'];
+        $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->bind_param("i", $admin_id);
+        $stmt->execute();
+        $admin = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        $code = random_int(100000, 999999);
+        $_SESSION['2fa_code'] = $code;
+        $_SESSION['2fa_email'] = $admin['email'];
+        require_once __DIR__ . '/../includes/email_helper.php';
+        sendSystemEmail($admin['email'], 'Your 2FA Verification Code', "Your 2FA code is: <b>$code</b>");
+        header('Location: verify_2fa.php');
+        exit();
+    } elseif (isset($_POST['disable_2fa'])) {
+        $admin_id = $_SESSION['user_id'];
+        $stmt = $conn->prepare("UPDATE users SET two_factor_enabled = 0 WHERE id = ?");
+        $stmt->bind_param('i', $admin_id);
+        $stmt->execute();
+        $stmt->close();
+        header('Location: profile.php');
+        exit();
+    }
+}
+
+// Check if user is logged in and is admin or super_admin
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_type'], ['admin', 'super_admin'])) {
+    header('Location: admin_login.php');
+    exit();
 }
 
 // Get admin information
@@ -110,6 +138,62 @@ $stmt->bind_param("i", $admin_id);
 $stmt->execute();
 $admin = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+
+// --- 2FA PIN LOGIC ---
+$pin_success = '';
+$pin_error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_2fa_pin'])) {
+    $new_pin = trim($_POST['new_2fa_pin'] ?? '');
+    $confirm_pin = trim($_POST['confirm_2fa_pin'] ?? '');
+    $current_pin = trim($_POST['current_2fa_pin'] ?? '');
+    $has_pin = !empty($admin['two_factor_pin']);
+    if (!preg_match('/^\d{6}$/', $new_pin)) {
+        $pin_error = 'PIN must be exactly 6 digits.';
+    } elseif ($new_pin !== $confirm_pin) {
+        $pin_error = 'PINs do not match.';
+    } elseif ($has_pin && (empty($current_pin) || !password_verify($current_pin, $admin['two_factor_pin']))) {
+        $pin_error = 'Current PIN is incorrect.';
+    } else {
+        $hashed_pin = password_hash($new_pin, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare('UPDATE users SET two_factor_pin = ? WHERE id = ?');
+        $stmt->bind_param('si', $hashed_pin, $admin_id);
+        $stmt->execute();
+        $stmt->close();
+        $pin_success = $has_pin ? '2FA PIN changed successfully.' : '2FA PIN set successfully.';
+        // Refresh admin info
+        $stmt = $conn->prepare('SELECT * FROM users WHERE id = ?');
+        $stmt->bind_param('i', $admin_id);
+        $stmt->execute();
+        $admin = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
+    $current_password = trim($_POST['current_password_for_delete'] ?? '');
+    // Verify password
+    $stmt = $conn->prepare('SELECT password FROM users WHERE id = ?');
+    $stmt->bind_param('i', $admin_id);
+    $stmt->execute();
+    $current_admin = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (empty($current_password) || !password_verify($current_password, $current_admin['password'])) {
+        $pin_error = 'Incorrect password. PIN was not deleted.';
+    } else {
+        $stmt = $conn->prepare('UPDATE users SET two_factor_pin = NULL WHERE id = ?');
+        $stmt->bind_param('i', $admin_id);
+        $stmt->execute();
+        $stmt->close();
+        $pin_success = '2FA PIN has been deleted successfully.';
+        // Refresh admin info
+        $stmt = $conn->prepare('SELECT * FROM users WHERE id = ?');
+        $stmt->bind_param('i', $admin_id);
+        $stmt->execute();
+        $admin = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -383,16 +467,83 @@ $stmt->close();
                             </div>
                         </div>
                     </div>
-                    
                     <div class="mt-3">
-                        <button class="btn btn-outline-primary me-2">
-                            <i class="fas fa-key me-1"></i>Change Password
-                            
-                        </button>
-                        <button class="btn btn-outline-warning">
-                            <i class="fas fa-shield-alt me-1"></i>Two-Factor Auth
-                        </button>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-bold">Two-Factor Authentication (PIN):</span>
+                            <?php if (!empty($admin['two_factor_pin'])): ?>
+                                <span class="badge bg-success">PIN Set</span>
+                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#set2FAPinModal">
+                                    <i class="fas fa-key me-1"></i>Change PIN
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete2FAPinModal">
+                                    <i class="fas fa-trash-alt me-1"></i>Delete PIN
+                                </button>
+                            <?php else: ?>
+                                <span class="badge bg-secondary">Not Set</span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if ($pin_error): ?><div class="alert alert-danger mt-2"><?php echo $pin_error; ?></div><?php endif; ?>
+                        <?php if ($pin_success): ?><div class="alert alert-success mt-2"><?php echo $pin_success; ?></div><?php endif; ?>
                     </div>
+                </div>
+
+                <!-- Set/Change 2FA PIN Modal -->
+                <div class="modal fade" id="set2FAPinModal" tabindex="-1" aria-labelledby="set2FAPinLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form method="POST">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="set2FAPinLabel"><?php echo !empty($admin['two_factor_pin']) ? 'Change 2FA PIN' : 'Set 2FA PIN'; ?></h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <?php if (!empty($admin['two_factor_pin'])): ?>
+                            <div class="mb-3">
+                              <label for="current_2fa_pin" class="form-label">Current PIN</label>
+                              <input type="password" class="form-control" id="current_2fa_pin" name="current_2fa_pin" maxlength="6" pattern="\d{6}" placeholder="Enter current 6-digit PIN" required>
+                            </div>
+                          <?php endif; ?>
+                          <div class="mb-3">
+                            <label for="new_2fa_pin" class="form-label">New PIN</label>
+                            <input type="password" class="form-control" id="new_2fa_pin" name="new_2fa_pin" maxlength="6" pattern="\d{6}" placeholder="Enter new 6-digit PIN" required>
+                          </div>
+                          <div class="mb-3">
+                            <label for="confirm_2fa_pin" class="form-label">Confirm New PIN</label>
+                            <input type="password" class="form-control" id="confirm_2fa_pin" name="confirm_2fa_pin" maxlength="6" pattern="\d{6}" placeholder="Confirm new 6-digit PIN" required>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" name="set_2fa_pin" class="btn btn-primary">Save PIN</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Delete 2FA PIN Modal -->
+                <div class="modal fade" id="delete2FAPinModal" tabindex="-1" aria-labelledby="delete2FAPinLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <form method="POST">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="delete2FAPinLabel">Delete 2FA PIN</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete your 2FA PIN? Your account will be less secure.</p>
+                            <div class="mb-3">
+                              <label for="current_password_for_delete" class="form-label">Enter your password to confirm</label>
+                              <input type="password" class="form-control" id="current_password_for_delete" name="current_password_for_delete" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" name="delete_2fa_pin" class="btn btn-danger">Delete PIN</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Session Activity Card -->
@@ -439,6 +590,69 @@ $stmt->close();
                         </div>
                     </div>
                 </div>
+
+                <!-- 2FA PIN Management -->
+                <div class="card mt-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Two-Factor Authentication (2FA) PIN</h5>
+                    </div>
+                    <div class="card-body">
+                        <?php
+                        $has_pin = !empty($admin['two_factor_pin']);
+                        ?>
+                         <?php if (!$has_pin): ?>
+                            <div class="alert alert-info">
+                                <h4 class="alert-heading">Set Up Your 2FA PIN</h4>
+                                <p>Enhance your account's security by creating a 6-digit PIN. This PIN will be required each time you log in, providing an extra layer of protection for your account.</p>
+                                <hr>
+                                <p class="mb-0"><strong>Important:</strong> Please choose a PIN that you can easily remember but is difficult for others to guess. If you forget your PIN, you will need to reset it via a code sent to your registered email address.</p>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($pin_success): ?>
+                            <div class="alert alert-success"><?php echo htmlspecialchars($pin_success); ?></div>
+                        <?php endif; ?>
+                        <?php if ($pin_error): ?>
+                            <div class="alert alert-danger"><?php echo htmlspecialchars($pin_error); ?></div>
+                        <?php endif; ?>
+
+                        <form method="POST" action="">
+                            <?php if ($has_pin): ?>
+                                <p>Your account is protected with a 2FA PIN. You can change or delete it below.</p>
+                                <div class="mb-3">
+                                    <label for="current_2fa_pin" class="form-label">Current PIN</label>
+                                    <input type="password" name="current_2fa_pin" id="current_2fa_pin" class="form-control" >
+                                </div>
+                            <?php endif; ?>
+                            <div class="mb-3">
+                                <label for="new_2fa_pin" class="form-label"><?php echo $has_pin ? 'New' : 'Create'; ?> 6-Digit PIN</label>
+                                <input type="password" name="new_2fa_pin" id="new_2fa_pin" class="form-control" required pattern="\d{6}" title="PIN must be exactly 6 digits.">
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm_2fa_pin" class="form-label">Confirm New PIN</label>
+                                <input type="password" name="confirm_2fa_pin" id="confirm_2fa_pin" class="form-control" required>
+                            </div>
+                            <button type="submit" name="set_2fa_pin" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo $has_pin ? 'Change' : 'Set'; ?> PIN</button>
+                        </form>
+
+                        <?php if ($has_pin): ?>
+                        <hr>
+                        <h5 class="mt-4">Delete 2FA PIN</h5>
+                        <div class="alert alert-warning">
+                            <strong>Warning:</strong> Deleting your 2FA PIN will reduce your account's security. We strongly recommend keeping it enabled.
+                        </div>
+                        <p>To delete your PIN, please enter your current account password for verification.</p>
+                        <form method="POST" action="" onsubmit="return confirm('Are you sure you want to delete your 2FA PIN? This will lower your account security.');">
+                            <input type="hidden" name="delete_2fa_pin" value="1">
+                            <div class="mb-3">
+                                <label for="current_password_for_delete" class="form-label">Current Password</label>
+                                <input type="password" name="current_password_for_delete" id="current_password_for_delete" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Delete PIN</button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -452,13 +666,10 @@ $stmt->close();
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5 class="text-white mb-3">
-                        <i class="fas fa-vote-yea me-2"></i>
-                        STVC Election System
-                    </h5>
-                    <p class="text-white-50">
-                        Empowering students to participate in democratic processes through secure and transparent online voting.
-                    </p>
+                    <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
+                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <span class="h5 mb-0">STVC Election System - Admin</span>
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <h6 class="text-white mb-3">Quick Links</h6>

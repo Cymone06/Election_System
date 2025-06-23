@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_POST['resend'])) {
         $stmt->execute();
         // Clear code from session
         unset($_SESSION['fp_code'], $_SESSION['fp_code_expires']);
-        // Redirect to reset password
-        header('Location: reset_password.php?token=' . $token);
+        // Redirect to create 2FA pin page
+        header('Location: create_2fa_pin.php');
         exit();
     }
 }

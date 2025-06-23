@@ -11,6 +11,14 @@ if (!isset($_SESSION['student_db_id'])) {
 $student_db_id = $_SESSION['student_db_id'];
 $show_undo_snackbar = false;
 
+// Fetch user info for navbar
+$stmt = $conn->prepare('SELECT first_name, last_name, profile_picture FROM students WHERE id = ?');
+$stmt->bind_param('i', $student_db_id);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+$profile_pic_path = !empty($user['profile_picture']) && file_exists($user['profile_picture']) ? $user['profile_picture'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['first_name'] . ' ' . $user['last_name']) . '&background=3498db&color=fff&size=128';
+
 // Handle actions: mark as read, delete, undo
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['delete_selected']) && !empty($_POST['selected_messages'])) {
@@ -98,6 +106,39 @@ $conn->query("UPDATE messages SET is_read = 1 WHERE student_id = $student_db_id 
         .navbar {
             background-color: var(--primary-color);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar .dropdown-toggle {
+            background: none !important;
+            border: none;
+            padding: 0;
+            color: inherit;
+            font-size: inherit;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        .navbar .dropdown-toggle:focus, .navbar .dropdown-toggle:hover {
+            background: none !important;
+            box-shadow: none !important;
+        }
+        .navbar .dropdown-menu {
+            font-size: 0.95rem;
+        }
+        .navbar .dropdown-menu .dropdown-item {
+            font-size: 0.95rem;
+        }
+        .navbar .dropdown-toggle img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 8px;
+            vertical-align: middle;
+            border: none;
+            box-shadow: none;
+        }
+        .navbar .dropdown-toggle span {
+            font-size: 1rem;
+            vertical-align: middle;
         }
         .student-header {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -291,6 +332,12 @@ $conn->query("UPDATE messages SET is_read = 1 WHERE student_id = $student_db_id 
             .search-bar-row { flex-direction: column; gap: 0.5rem; }
             .snackbar { min-width: 90vw; font-size: 1rem; }
         }
+        .navbar .user-dropdown {
+            color: #fff !important;
+        }
+        .navbar .user-dropdown .profile-name {
+            color: #fff !important;
+        }
     </style>
     <script>
         function selectAllMessages() {
@@ -326,9 +373,9 @@ $conn->query("UPDATE messages SET is_read = 1 WHERE student_id = $student_db_id 
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="dashboard.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System
+            <a class="navbar-brand d-flex align-items-center" href="index.php">
+                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -336,16 +383,35 @@ $conn->query("UPDATE messages SET is_read = 1 WHERE student_id = $student_db_id 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="dashboard.php"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                        <a class="nav-link" href="index.php"><i class="fas fa-home me-1"></i> Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="my_messages.php"><i class="fas fa-envelope me-1"></i> My Messages<?php if ($unread_count > 0): ?><span class="badge bg-danger ms-1"><?php echo $unread_count; ?></span><?php endif; ?></a>
+                        <a class="nav-link" href="positions.php"><i class="fas fa-briefcase me-1"></i> Positions</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="profile.php"><i class="fas fa-user me-1"></i> Profile</a>
+                        <a class="nav-link" href="gallery.php"><i class="fas fa-images me-1"></i> Gallery</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="logout.php"><i class="fas fa-sign-out-alt me-1"></i> Logout</a>
+                        <a class="nav-link" href="news.php"><i class="fas fa-newspaper me-1"></i> News</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="my_messages.php"><i class="fas fa-envelope me-1"></i> My Messages</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle user-dropdown" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <div class="user-avatar" style="padding:0;overflow:hidden;width:36px;height:36px;display:inline-block;vertical-align:middle;">
+                                <img src="<?php echo $profile_pic_path; ?>" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                            </div>
+                            <span class="profile-name"><?php echo htmlspecialchars($user['first_name']); ?></span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="application.php"><i class="fas fa-edit me-2"></i>Apply for Position</a></li>
+                            <li><a class="dropdown-item" href="positions.php"><i class="fas fa-list me-2"></i>View Positions</a></li>
+                            <li><a class="dropdown-item" href="news.php"><i class="fas fa-newspaper me-2"></i>News & Q&A</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
                     </li>
                 </ul>
             </div>
@@ -411,5 +477,6 @@ $conn->query("UPDATE messages SET is_read = 1 WHERE student_id = $student_db_id 
         </form>
         <?php endif; ?>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

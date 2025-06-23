@@ -269,9 +269,9 @@ $unread_admin_count = get_unread_admin_message_count($conn, $admin_id);
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="admin_dashboard.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System - Admin
+            <a class="navbar-brand d-flex align-items-center" href="admin_dashboard.php">
+                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System - Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -292,6 +292,9 @@ $unread_admin_count = get_unread_admin_message_count($conn, $admin_id);
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="admin_messages.php"><i class="fas fa-inbox me-1"></i> Inbox<?php if ($unread_admin_count > 0): ?><span class="badge bg-danger ms-1"><?php echo $unread_admin_count; ?></span><?php endif; ?></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="elected_officials.php"><i class="fas fa-user-check me-1"></i> Elected Officials</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">

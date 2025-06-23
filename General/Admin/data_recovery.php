@@ -208,5 +208,6 @@ if ($result_gallery) {
         });
     });
     </script>
+    <?php include 'admin_footer.php'; ?>
 </body>
 </html> 

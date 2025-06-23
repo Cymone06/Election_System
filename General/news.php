@@ -341,9 +341,9 @@ if (isset($_SESSION['user_id']) && (isset($_SESSION['user_type']) && ($_SESSION[
     <?php if ($is_admin): ?>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="Admin/admin_dashboard.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System - Admin
+            <a class="navbar-brand d-flex align-items-center" href="Admin/admin_dashboard.php">
+                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System - Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -386,9 +386,9 @@ if (isset($_SESSION['user_id']) && (isset($_SESSION['user_type']) && ($_SESSION[
     <?php else: ?>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="index.php">
-                <i class="fas fa-vote-yea me-2"></i>
-                STVC Election System
+            <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
+                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -412,13 +412,17 @@ if (isset($_SESSION['user_id']) && (isset($_SESSION['user_type']) && ($_SESSION[
                             <a class="nav-link" href="dashboard.php"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <img src="<?php echo $profile_pic_path; ?>" alt="Profile" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;">
-                                <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
+                            <a class="nav-link dropdown-toggle user-dropdown" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <div class="user-avatar" style="padding:0;overflow:hidden;width:36px;height:36px;display:inline-block;vertical-align:middle;">
+                                    <img src="<?php echo $profile_pic_path; ?>" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                </div>
+                                <?php echo htmlspecialchars($user['first_name']); ?>
                             </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="dashboard.php"><i class="fas fa-user me-2"></i>Profile</a></li>
-                                <li><a class="dropdown-item" href="application.php"><i class="fas fa-edit me-2"></i>My Applications</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i>Profile</a></li>
+                                <li><a class="dropdown-item" href="application.php"><i class="fas fa-edit me-2"></i>Apply for Position</a></li>
+                                <li><a class="dropdown-item" href="positions.php"><i class="fas fa-list me-2"></i>View Positions</a></li>
+                                <li><a class="dropdown-item" href="news.php"><i class="fas fa-newspaper me-2"></i>News & Q&A</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                             </ul>

@@ -41,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
         // Insert user into DB
         if ($type === 'student') {
-            $stmt = $conn->prepare('INSERT INTO students (first_name, last_name, student_id, email, id_number, phone_number, department, password, agreed_terms, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt = $conn->prepare('INSERT INTO students (first_name, last_name, student_id, email, id_number, phone_number, gender, department, course_level, password, agreed_terms, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             $status = 'pending';
-            $stmt->bind_param('ssssssssis', $data['first_name'], $data['last_name'], $data['student_id'], $data['email'], $data['id_number'], $data['phone_number'], $data['department'], $data['password'], $data['agreed_terms'], $status);
+            $stmt->bind_param('ssssssssssis', $data['first_name'], $data['last_name'], $data['student_id'], $data['email'], $data['id_number'], $data['phone_number'], $data['gender'], $data['department'], $data['course_level'], $data['password'], $data['agreed_terms'], $status);
             $stmt->execute();
             $stmt->close();
             $success = 'Email verified and registration complete! You may now log in.';
@@ -240,13 +240,35 @@ if (isset($_POST['resend_code'])) {
                 font-size: 1.5rem;
             }
         }
+        .btn-back {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+            color: #fff !important;
+            margin-top: 15px;
+            margin-bottom: 0;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            box-shadow: 0 2px 8px rgba(231,76,60,0.10);
+        }
+        .btn-back:hover, .btn-back:focus {
+            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%) !important;
+            color: #fff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(231,76,60,0.18);
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">
-            <img src="General/uploads/gallery/seme.jpg" alt="STVC Logo" style="height: 60px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(102,126,234,0.15);">
-            <i class="fas fa-envelope-open-text"></i>
+            <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height: 60px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(102,126,234,0.15);">
             <h1>Email Verification</h1>
             <p>Enter the code sent to your email to verify your account</p>
             <div style="margin-top: 10px;">
@@ -258,27 +280,24 @@ if (isset($_POST['resend_code'])) {
         <?php endif; ?>
         <?php if ($success): ?>
             <div class="message success"><?php echo htmlspecialchars($success); ?></div>
-            <div class="links">
-                <a href="<?php echo ($type === 'student') ? 'login.php' : 'Admin/admin_login.php'; ?>" class="btn">Login</a>
-            </div>
-        <?php else: ?>
-            <form method="POST">
-                <div class="form-group">
-                    <label for="verification_code">Verification Code</label>
-                    <input type="text" class="form-control" id="verification_code" name="verification_code" required maxlength="10">
-                </div>
-                <button type="submit" class="btn">Verify Email</button>
-            </form>
-            <form method="POST" class="mt-2">
-                <button type="submit" name="resend_code" class="btn btn-link w-100" style="color:#667eea; background:none; border:none; box-shadow:none; margin-bottom:0;">Resend Code</button>
-            </form>
         <?php endif; ?>
         <?php if ($resend_message): ?>
             <div class="message info"><?php echo htmlspecialchars($resend_message); ?></div>
         <?php endif; ?>
-        <footer style="margin-top: 30px; color: #aaa; font-size: 0.95rem;">
-            &copy; <?php echo date('Y'); ?> STVC Election System. All rights reserved.
-        </footer>
+        <form method="POST" autocomplete="off">
+            <div class="form-group">
+                <label for="verification_code">Verification Code</label>
+                <input type="text" id="verification_code" name="verification_code" maxlength="6" required autofocus pattern="\d{6}" placeholder="Enter 6-digit code">
+            </div>
+            <button type="submit" class="btn">Verify Email</button>
+        </form>
+        <form method="POST" style="margin-bottom: 0;">
+            <button type="submit" name="resend_code" class="btn" style="background: #764ba2;">Resend Code</button>
+        </form>
+        <a href="index.php" class="btn btn-back">Back</a>
+        <div class="links">
+            <a href="login.php">Already have an account? Log in</a>
+        </div>
     </div>
 </body>
 </html> 

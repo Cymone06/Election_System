@@ -86,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!sendSystemEmail($email, $subject, $body, $firstName)) {
             $errors[] = 'Failed to send verification email. Please try again.';
             $_SESSION['errors'] = $errors;
-            header('Location: admin_register.php');
-            exit;
+                header('Location: admin_register.php');
+                exit;
         }
         // Store registration data in session
         $_SESSION['pending_registration'] = [
