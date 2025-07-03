@@ -14,19 +14,11 @@ if ($is_logged_in) {
     $stmt->close();
     $profile_pic_path = (!empty($user_info['profile_picture']) && file_exists($user_info['profile_picture'])) ? $user_info['profile_picture'] : 'https://ui-avatars.com/api/?name=' . urlencode($user_info['first_name'] . ' ' . $user_info['last_name']) . '&background=3498db&color=fff&size=128';
 }
-// Fetch applicants
-$applicants_by_position = [];
-$sql = "SELECT a.id, a.first_name, a.last_name, a.image1, a.status, a.vetting_status, p.position_name 
-        FROM applications a 
-        JOIN positions p ON a.position_id = p.id 
-        WHERE a.status != 'rejected' AND a.vetting_status != 'rejected'
-        ORDER BY p.position_name, a.created_at DESC";
-$result = $conn->query($sql);
-if ($result) {
-    while ($row = $result->fetch_assoc()) {
-        $applicants_by_position[$row['position_name']][] = $row;
-    }
-}
+// Fetch applicants with student info
+$stmt = $conn->prepare('SELECT a.*, s.first_name, s.last_name, s.department, s.student_id AS reg_student_id FROM applications a LEFT JOIN students s ON a.student_id = s.student_id ORDER BY a.created_at DESC');
+$stmt->execute();
+$applicants = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -108,44 +100,38 @@ if ($result) {
                 <div class="row justify-content-center">
                     <div class="col-md-10">
                         <div class="registration-card" style="background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 30px;">
-                            <?php if (!empty($applicants_by_position)): ?>
+                            <?php if (!empty($applicants)): ?>
                                 <div class="row justify-content-center">
-                                    <?php foreach ($applicants_by_position as $position => $applicants): ?>
+                                    <?php foreach ($applicants as $app): ?>
                                         <div class="col-md-6 mb-4">
                                             <div class="card shadow-sm h-100">
                                                 <div class="card-header bg-primary text-white">
-                                                    <h4 class="mb-0"><i class="fas fa-user-tie me-2"></i><?php echo htmlspecialchars($position); ?></h4>
+                                                    <h4 class="mb-0"><i class="fas fa-user-tie me-2"></i><?php echo htmlspecialchars((!empty($app['first_name']) && !empty($app['last_name'])) ? $app['first_name'] . ' ' . $app['last_name'] : $app['first_name']); ?></h4>
                                                 </div>
                                                 <div class="card-body">
                                                     <div class="d-flex flex-column align-items-center gap-3">
-                                                        <?php foreach ($applicants as $applicant): ?>
-                                                            <div class="card text-center p-3" style="width: 280px; min-height: 340px; box-shadow: 0 4px 12px rgba(44,62,80,0.10);">
-                                                                <img src="uploads/applications/<?php echo htmlspecialchars($applicant['image1']); ?>" class="candidate-img-marquee mt-3 mx-auto" alt="Applicant Image" style="width:100px;height:100px;object-fit:cover;border-radius:50%;">
-                                                                <div class="card-body p-2">
-                                                                    <h6 class="card-title mb-1"><?php echo htmlspecialchars($applicant['first_name'] . ' ' . $applicant['last_name']); ?></h6>
-                                                                    <?php
-                                                                    $status = strtolower($applicant['status']);
-                                                                    $vetting = strtolower($applicant['vetting_status']);
-                                                                    if ($status === 'pending') {
-                                                                        echo '<span class="badge bg-secondary badge-status">Pending Approval</span>';
-                                                                    } elseif ($status === 'approved' && $vetting === 'pending') {
-                                                                        echo '<span class="badge bg-warning badge-status">Waiting Vetting Approval</span>';
-                                                                    } elseif ($status === 'approved' && $vetting === 'verified') {
-                                                                        echo '<span class="badge bg-success badge-status">Approved</span>';
-                                                                    } elseif ($status === 'rejected' || $vetting === 'rejected') {
-                                                                        echo '<span class="badge bg-danger badge-status">Rejected</span>';
-                                                                    } else {
-                                                                        echo '<span class="badge bg-secondary badge-status">' . ucfirst($status) . '</span>';
-                                                                    }
-                                                                    ?>
-                                                                    <a href="application_details.php?id=<?php echo $applicant['id']; ?>" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-eye me-1"></i>View Details</a>
-                                                                    <div class="mt-3 d-flex justify-content-center align-items-center gap-3">
-                                                                        <button class="btn btn-outline-success btn-like" data-id="<?php echo $applicant['id']; ?>"><i class="fas fa-thumbs-up"></i> <span class="like-count" id="like-count-<?php echo $applicant['id']; ?>">0</span></button>
-                                                                        <button class="btn btn-outline-danger btn-dislike" data-id="<?php echo $applicant['id']; ?>"><i class="fas fa-thumbs-down"></i> <span class="dislike-count" id="dislike-count-<?php echo $applicant['id']; ?>">0</span></button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        <?php endforeach; ?>
+                                                        <span class="badge bg-secondary ms-1">ID: <?php echo !empty($app['reg_student_id']) ? htmlspecialchars($app['reg_student_id']) : htmlspecialchars($app['student_id']); ?></span>
+                                                        <span class="badge bg-info ms-1">Dept: <?php echo !empty($app['department']) ? htmlspecialchars($app['department']) : htmlspecialchars($app['department']); ?></span>
+                                                        <?php
+                                                        $status = strtolower($app['status']);
+                                                        $vetting = strtolower($app['vetting_status']);
+                                                        if ($status === 'pending') {
+                                                            echo '<span class="badge bg-secondary badge-status">Pending Approval</span>';
+                                                        } elseif ($status === 'approved' && $vetting === 'pending') {
+                                                            echo '<span class="badge bg-warning badge-status">Waiting Vetting Approval</span>';
+                                                        } elseif ($status === 'approved' && $vetting === 'verified') {
+                                                            echo '<span class="badge bg-success badge-status">Approved</span>';
+                                                        } elseif ($status === 'rejected' || $vetting === 'rejected') {
+                                                            echo '<span class="badge bg-danger badge-status">Rejected</span>';
+                                                        } else {
+                                                            echo '<span class="badge bg-secondary badge-status">' . ucfirst($status) . '</span>';
+                                                        }
+                                                        ?>
+                                                        <a href="application_details.php?id=<?php echo $app['id']; ?>" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-eye me-1"></i>View Details</a>
+                                                        <div class="mt-3 d-flex justify-content-center align-items-center gap-3">
+                                                            <button class="btn btn-outline-success btn-like" data-id="<?php echo $app['id']; ?>"><i class="fas fa-thumbs-up"></i> <span class="like-count" id="like-count-<?php echo $app['id']; ?>">0</span></button>
+                                                            <button class="btn btn-outline-danger btn-dislike" data-id="<?php echo $app['id']; ?>"><i class="fas fa-thumbs-down"></i> <span class="dislike-count" id="dislike-count-<?php echo $app['id']; ?>">0</span></button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

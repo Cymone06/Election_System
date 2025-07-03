@@ -6,27 +6,50 @@ require_once '../config/database.php';
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     isset($_POST['first_name']) && isset($_POST['last_name']) && isset($_POST['email'])
+    && isset($_POST['id_number']) && isset($_POST['gender'])
 ) {
     $first_name = $_POST['first_name'];
     $last_name = $_POST['last_name'];
     $email = $_POST['email'];
+    $id_number = $_POST['id_number'];
+    $gender = $_POST['gender'];
     $current_password = $_POST['current_password'];
     $new_password = $_POST['new_password'];
     
     // Verify current password
-    $stmt = $conn->prepare("SELECT password FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT password, email FROM users WHERE id = ?");
     $stmt->bind_param("i", $_SESSION['user_id']);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
     $stmt->close();
+    $current_email = $user['email'] ?? '';
+    $email_changed = ($email !== $current_email);
     
     if (password_verify($current_password, $user['password'])) {
+        if ($email_changed) {
+            // Generate verification code
+            $verification_code = random_int(100000, 999999);
+            $_SESSION['pending_email_update'] = [
+                'user_type' => 'admin',
+                'user_id' => $_SESSION['user_id'],
+                'new_email' => $email,
+                'code' => $verification_code,
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'id_number' => $id_number,
+                'gender' => $gender,
+                'new_password' => !empty($new_password) ? password_hash($new_password, PASSWORD_DEFAULT) : null
+            ];
+            require_once __DIR__ . '/../includes/email_helper.php';
+            sendSystemEmail($email, 'Verify Your New Email', "Your verification code is: <b>$verification_code</b>");
+            header('Location: ../verify_new_email.php');
+            exit();
+        } else {
         // Update profile
-        $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?");
-        $stmt->bind_param("sssi", $first_name, $last_name, $email, $_SESSION['user_id']);
+            $stmt = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, id_number = ?, gender = ? WHERE id = ?");
+            $stmt->bind_param("ssssi", $first_name, $last_name, $id_number, $gender, $_SESSION['user_id']);
         $stmt->execute();
         $stmt->close();
-        
         // Update password if provided
         if (!empty($new_password)) {
             $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
@@ -35,9 +58,9 @@ if (
             $stmt->execute();
             $stmt->close();
         }
-        
         header('Location: profile.php?success=1');
         exit();
+        }
     } else {
         header('Location: profile.php?error=invalid_password');
         exit();
@@ -368,7 +391,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
                 <!-- Profile Overview -->
                 <div class="profile-card">
                     <div class="profile-avatar">
-                        <i class="fas fa-user-shield"></i>
+                        <?php if (!empty($admin['profile_picture']) && file_exists($admin['profile_picture'])): ?>
+                            <img src="<?php echo htmlspecialchars($admin['profile_picture']); ?>" alt="Profile Picture">
+                        <?php else: ?>
+                            <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:3rem;font-weight:bold;">
+                                <?php
+                                $initials = '';
+                                if (!empty($admin['first_name'])) $initials .= strtoupper($admin['first_name'][0]);
+                                if (!empty($admin['last_name'])) $initials .= strtoupper($admin['last_name'][0]);
+                                echo htmlspecialchars($initials);
+                                ?>
+                            </span>
+                        <?php endif; ?>
                     </div>
                     <h4 class="text-center mb-3"><?php echo htmlspecialchars($admin['first_name'] . ' ' . $admin['last_name']); ?></h4>
                     <p class="text-center text-muted mb-4">Administrator</p>
@@ -393,6 +427,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
                         <div class="info-value">
                             <span class="badge bg-success">Active</span>
                         </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-label">ID Number</div>
+                        <div class="info-value"><?php echo htmlspecialchars($admin['id_number']); ?></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Gender</div>
+                        <div class="info-value"><?php echo htmlspecialchars($admin['gender']); ?></div>
                     </div>
                 </div>
             </div>
@@ -423,9 +466,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
                         </div>
                         
                         <div class="mb-3">
-                            <label for="admin_id" class="form-label">Admin ID</label>
-                            <input type="text" class="form-control" id="admin_id" value="<?php echo htmlspecialchars($admin['admin_id']); ?>" readonly>
-                            <small class="text-muted">Admin ID cannot be changed</small>
+                            <label for="id_number" class="form-label">ID Number</label>
+                            <input type="text" class="form-control" id="id_number" name="id_number" value="<?php echo htmlspecialchars($admin['id_number']); ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gender" class="form-label">Gender</label>
+                            <select class="form-control" id="gender" name="gender" required>
+                                <option value="">Select gender</option>
+                                <option value="Male" <?php if($admin['gender']==='Male') echo 'selected'; ?>>Male</option>
+                                <option value="Female" <?php if($admin['gender']==='Female') echo 'selected'; ?>>Female</option>
+                                <option value="Other" <?php if($admin['gender']==='Other') echo 'selected'; ?>>Other</option>
+                            </select>
                         </div>
                         
                         <hr>

@@ -173,9 +173,22 @@ require_once 'config/session_config.php';
                         </div>
                         <p class="text-center mb-3">Share your experience with the STVC Election System! Reviews are visible after admin approval and are auto-deleted after 20 days.</p>
                         <?php
-                        $is_logged_in = isset($_SESSION['student_db_id']) && isset($_SESSION['first_name']) && isset($_SESSION['last_name']) && isset($_SESSION['student_id']);
-                        $student_name = $is_logged_in ? $_SESSION['first_name'] . ' ' . $_SESSION['last_name'] : '';
-                        $student_id = $is_logged_in ? $_SESSION['student_id'] : '';
+                        $is_logged_in = isset($_SESSION['student_db_id']) && is_numeric($_SESSION['student_db_id']);
+                        $student_name = '';
+                        $student_id = '';
+                        if ($is_logged_in) {
+                            require_once 'config/connect.php';
+                            $student_db_id = (int)$_SESSION['student_db_id'];
+                            $stmt = $conn->prepare('SELECT first_name, last_name, student_id FROM students WHERE id = ?');
+                            $stmt->bind_param('i', $student_db_id);
+                            $stmt->execute();
+                            $row = $stmt->get_result()->fetch_assoc();
+                            $stmt->close();
+                            if ($row) {
+                                $student_name = $row['first_name'] . ' ' . $row['last_name'];
+                                $student_id = $row['student_id'];
+                            }
+                        }
                         ?>
                         <?php if ($is_logged_in): ?>
                         <form method="POST" class="mb-4" action="">
@@ -194,7 +207,7 @@ require_once 'config/session_config.php';
                                         <label class="form-label mb-1">Your Rating:</label><br>
                                         <span class="star-rating">
                                             <?php for ($i = 5; $i >= 1; $i--): ?>
-                                                <input type="radio" id="star<?php echo $i; ?>" name="rating" value="<?php echo $i; ?>" <?php echo ($i == 5 ? 'checked' : ''); ?> required>
+                                                <input type="radio" id="star<?php echo $i; ?>" name="rating" value="<?php echo $i; ?>">
                                                 <label for="star<?php echo $i; ?>" title="<?php echo $i; ?> stars"><i class="fas fa-star"></i></label>
                                             <?php endfor; ?>
                                         </span>
@@ -211,10 +224,10 @@ require_once 'config/session_config.php';
                         // Handle review submission
                         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
                             $content = trim($_POST['content'] ?? '');
-                            $rating = (int)($_POST['rating'] ?? 5);
+                            $rating = isset($_POST['rating']) && $_POST['rating'] !== '' ? (int)$_POST['rating'] : null;
                             $student_db_id = $_SESSION['student_db_id'];
                             $student_name = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
-                            if (!empty($content) && $rating >= 1 && $rating <= 5) {
+                            if (!empty($content)) {
                                 $stmt = $conn->prepare('INSERT INTO reviews (student_id, student_name, content, rating, status, created_at) VALUES (?, ?, ?, ?, "pending", NOW())');
                                 $stmt->bind_param('issi', $student_db_id, $student_name, $content, $rating);
                                 $stmt->execute();

@@ -15,11 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = trim($_POST['firstName'] ?? '');
     $lastName = trim($_POST['lastName'] ?? '');
     $email = trim($_POST['email'] ?? '');
-    $adminId = trim($_POST['adminId'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirmPassword = $_POST['confirmPassword'] ?? '';
     $agreeTerms = isset($_POST['agreeTerms']);
     $phone = trim($_POST['phone'] ?? '');
+    $idNumber = trim($_POST['idNumber'] ?? '');
+    $gender = trim($_POST['gender'] ?? '');
+    $adminId = trim($_POST['adminId'] ?? '');
 
     $errors = [];
     // Validate fields
@@ -51,27 +53,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($phone) || !preg_match('/^[0-9\-\+\s]{7,20}$/', $phone)) {
         $errors[] = 'A valid phone number is required.';
     }
+    if (empty($idNumber) || strlen($idNumber) < 3) {
+        $errors[] = 'ID Number is required and must be at least 3 characters.';
+    }
+    if (empty($gender) || !in_array($gender, ['Male', 'Female', 'Other'])) {
+        $errors[] = 'Please select a valid gender.';
+    }
 
     // Check for duplicates
     if (empty($errors)) {
         $emailExists = record_exists('users', 'email', $email);
         $adminIdExists = record_exists('users', 'admin_id', $adminId);
-        // Check for duplicate phone number if column exists
-        // $phoneExists = record_exists('users', 'phone_number', $phone); // Uncomment if column exists
-        // if ($phoneExists) {
-        //     $errors[] = 'An account with this phone number already exists.';
-        // }
-        if ($emailExists) {
-            $errors[] = 'An account with this email already exists.';
-        }
         if ($adminIdExists) {
             $errors[] = 'An account with this Admin ID already exists.';
+        }
+        if ($emailExists) {
+            $errors[] = 'An account with this email already exists.';
         }
     }
 
     // Registration logic
     if (empty($errors)) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        // Check if a super admin exists
+        $superAdminExists = get_count('users', "role = 'super_admin'") > 0;
+        if (!$superAdminExists) {
+            $role = 'super_admin';
+            $status = 'active';
+        } else {
+            $role = 'admin';
+            $status = 'pending';
+        }
         // Generate verification code
         $verification_code = random_int(100000, 999999);
         $expires_at = date('Y-m-d H:i:s', strtotime('+10 minutes'));
@@ -86,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!sendSystemEmail($email, $subject, $body, $firstName)) {
             $errors[] = 'Failed to send verification email. Please try again.';
             $_SESSION['errors'] = $errors;
-                header('Location: admin_register.php');
-                exit;
+            header('Location: admin_register.php');
+            exit;
         }
         // Store registration data in session
         $_SESSION['pending_registration'] = [
@@ -97,8 +109,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'lastName' => $lastName,
                 'email' => $email,
                 'adminId' => $adminId,
+                'idNumber' => $idNumber,
+                'gender' => $gender,
                 'phone' => $phone,
-                'password' => $hashedPassword
+                'password' => $hashedPassword,
+                'role' => $role,
+                'status' => $status
             ]
         ];
         header('Location: ../verify_email.php');

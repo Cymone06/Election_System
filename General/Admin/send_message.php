@@ -87,8 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $admin_id = $_SESSION['user_id'];
         foreach ($recipients as $rec) {
             if ($rec['type'] === 'student') {
-                $stmt = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, ?, ?, ?)");
-                $stmt->bind_param("isss", $rec['id'], $type, $message_title, $message_content);
+                if ($recipient_type === 'individual') {
+                    $stmt = $conn->prepare("INSERT INTO messages (student_id, recipient_admin_id, type, title, content) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->bind_param("iisss", $rec['id'], $admin_id, $type, $message_title, $message_content);
+                } else {
+                    $stmt = $conn->prepare("INSERT INTO messages (student_id, type, title, content) VALUES (?, ?, ?, ?)");
+                    $stmt->bind_param("isss", $rec['id'], $type, $message_title, $message_content);
+                }
                 $stmt->execute();
                 $stmt->close();
             } elseif ($rec['type'] === 'admin') {

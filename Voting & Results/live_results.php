@@ -30,6 +30,12 @@ if ($active_election) {
     $election_end_date = $active_election['end_date'];
 }
 $stmt->close();
+
+// Fetch candidates with student info
+$stmt = $conn->prepare('SELECT c.*, s.first_name, s.last_name, s.profile_picture FROM candidates c LEFT JOIN students s ON c.student_id = s.id ORDER BY c.position_id ASC, c.id ASC');
+$stmt->execute();
+$candidates = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -200,15 +206,15 @@ $stmt->close();
                     const percentage = (positionData.total_votes > 0) ? (candidate.vote_count / positionData.total_votes * 100).toFixed(1) : 0;
                     candidatesHtml += `
                         <div class="d-flex align-items-center mb-3">
-                            <img src="../General/uploads/applications/${candidate.image1}" class="candidate-avatar me-3">
+                            <img src="<?php echo !empty($candidate['profile_picture']) && file_exists($candidate['profile_picture']) ? htmlspecialchars($candidate['profile_picture']) : 'https://ui-avatars.com/api/?name=' . urlencode(trim(($candidate['first_name'] ?? '') . ' ' . ($candidate['last_name'] ?? ''))) . '&background=3498db&color=fff&size=64'; ?>" alt="Candidate" class="candidate-avatar me-3">
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between">
-                                    <strong>${candidate.first_name} ${candidate.last_name}</strong>
-                                    <span class="fw-bold">${candidate.vote_count} Votes</span>
+                                    <strong><?php echo htmlspecialchars((!empty($candidate['first_name']) && !empty($candidate['last_name'])) ? $candidate['first_name'] . ' ' . $candidate['last_name'] : $candidate['name']); ?></strong>
+                                    <span class="fw-bold"><?php echo htmlspecialchars($candidate['vote_count']); ?> Votes</span>
                                 </div>
                                 <div class="progress mt-1">
-                                    <div class="progress-bar" role="progressbar" style="width: ${percentage}%;" aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
-                                        ${percentage}%
+                                    <div class="progress-bar" role="progressbar" style="width: <?php echo $percentage; ?>%;" aria-valuenow="<?php echo $percentage; ?>" aria-valuemin="0" aria-valuemax="100">
+                                        <?php echo $percentage; ?>%
                                     </div>
                                 </div>
                             </div>
@@ -220,8 +226,8 @@ $stmt->close();
                     <div class="col-md-6 col-lg-4">
                         <div class="position-card">
                             <div class="card-body p-4">
-                                <h5 class="card-title text-center mb-4">${position}</h5>
-                                ${candidatesHtml}
+                                <h5 class="card-title text-center mb-4"><?php echo htmlspecialchars($position); ?></h5>
+                                <?php echo $candidatesHtml; ?>
                             </div>
                         </div>
                     </div>

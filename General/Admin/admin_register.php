@@ -271,6 +271,21 @@ unset($_SESSION['errors'], $_SESSION['success']);
 
             <form action="process_admin_register.php" method="POST" id="adminRegisterForm">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>">
+                
+                <!-- Admin-specific field -->
+                <div id="adminFields">
+                    <div class="form-group">
+                        <label for="adminId" class="form-label">Admin ID</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-id-card"></i>
+                            </span>
+                            <input type="text" class="form-control" id="adminId" name="adminId" 
+                                   placeholder="Enter admin ID (e.g., ADMIN001)" required>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -310,13 +325,28 @@ unset($_SESSION['errors'], $_SESSION['success']);
                 </div>
 
                 <div class="form-group">
-                    <label for="adminId" class="form-label">Admin ID</label>
+                    <label for="idNumber" class="form-label">ID Number</label>
                     <div class="input-group">
                         <span class="input-group-text">
-                            <i class="fas fa-id-card"></i>
+                            <i class="fas fa-id-badge"></i>
                         </span>
-                        <input type="text" class="form-control" id="adminId" name="adminId" 
-                               placeholder="Enter admin ID (e.g., ADMIN001)" required>
+                        <input type="text" class="form-control" id="idNumber" name="idNumber" 
+                               placeholder="Enter your ID number" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender" class="form-label">Gender</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-venus-mars"></i>
+                        </span>
+                        <select class="form-control" id="gender" name="gender" required>
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
                 </div>
 

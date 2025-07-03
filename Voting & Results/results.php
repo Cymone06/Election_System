@@ -44,6 +44,12 @@ if (!$election) {
     }
     $stmt->close();
 }
+
+// Fetch candidates with student info
+$stmt = $conn->prepare('SELECT c.*, s.first_name, s.last_name, s.profile_picture FROM candidates c LEFT JOIN students s ON c.student_id = s.id ORDER BY c.position_id ASC, c.id ASC');
+$stmt->execute();
+$candidates = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -96,8 +102,8 @@ if (!$election) {
                                 ?>
                                 <li class="list-group-item d-flex justify-content-between align-items-center <?php echo $is_winner ? 'list-group-item-success' : ''; ?>">
                                     <div>
-                                        <img src="../General/uploads/applications/<?php echo htmlspecialchars($candidate['image1']); ?>" class="me-3" style="width:50px;height:50px;border-radius:50%;object-fit:cover;">
-                                        <strong><?php echo htmlspecialchars($candidate['first_name'] . ' ' . $candidate['last_name']); ?></strong>
+                                        <img src="<?php echo !empty($candidate['profile_picture']) && file_exists($candidate['profile_picture']) ? htmlspecialchars($candidate['profile_picture']) : 'https://ui-avatars.com/api/?name=' . urlencode(trim(($candidate['first_name'] ?? '') . ' ' . ($candidate['last_name'] ?? ''))) . '&background=3498db&color=fff&size=64'; ?>" alt="Candidate" class="candidate-avatar me-3">
+                                        <span class="fw-bold"><?php echo htmlspecialchars((!empty($candidate['first_name']) && !empty($candidate['last_name'])) ? $candidate['first_name'] . ' ' . $candidate['last_name'] : $candidate['name']); ?></span>
                                     </div>
                                     <div>
                                         <?php if ($is_winner): ?>

@@ -15,7 +15,15 @@ $stmt->bind_param("i", $student_db_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
-$profile_pic_path = (!empty($user['profile_picture']) && file_exists($user['profile_picture'])) ? $user['profile_picture'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['first_name'] . ' ' . $user['last_name']) . '&background=3498db&color=fff&size=128';
+$profile_pic_path = (!empty($user['profile_picture']) && file_exists($user['profile_picture'])) ? $user['profile_picture'] : '';
+
+function getInitials($first, $last) {
+    $f = !empty($first) ? strtoupper($first[0]) : '';
+    $l = !empty($last) ? strtoupper($last[0]) : '';
+    $initials = $f . $l;
+    if (empty($initials)) return 'U';
+    return $initials;
+}
 
 // Get upcoming elections (using election_periods table)
 $stmt = $conn->prepare("SELECT * FROM election_periods WHERE status = 'upcoming' ORDER BY start_date ASC");
@@ -319,10 +327,22 @@ $stmt->close();
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle user-dropdown" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <div class="user-avatar" style="padding:0;overflow:hidden;width:36px;height:36px;display:inline-block;vertical-align:middle;">
-                                <img src="<?php echo $profile_pic_path; ?>" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                            <div class="user-avatar" style="padding:0;overflow:hidden;width:36px;height:36px;display:inline-block;vertical-align:middle;background:#3498db;color:#fff;font-weight:bold;font-size:1.1rem;text-align:center;line-height:36px;border-radius:50%;">
+                                <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
+                                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                <?php else: ?>
+                                    <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:1.1rem;font-weight:bold;color:#fff;">
+                                        <?php echo htmlspecialchars(getInitials($user['first_name'], $user['last_name'])); ?>
+                                    </span>
+                                <?php endif; ?>
                             </div>
-                            <?php echo htmlspecialchars($user['first_name']); ?>
+                            <span class="profile-name" style="margin-left:8px;vertical-align:middle; color:#fff; font-weight:500;">
+                                <?php 
+                                // DEBUG: Output the raw values for troubleshooting
+                                echo '<!-- first_name: ' . var_export($user['first_name'], true) . ' last_name: ' . var_export($user['last_name'], true) . ' -->';
+                                echo htmlspecialchars(trim($user['first_name'] . ' ' . $user['last_name'])); 
+                                ?>
+                            </span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i>Profile</a></li>
@@ -387,7 +407,15 @@ $stmt->close();
                         <div class="card profile-card">
                             <div class="card-body">
                                 <div class="d-flex flex-column align-items-center mb-3">
-                                    <img src="<?php echo $profile_pic_path; ?>" alt="Profile Picture" style="width:64px;height:64px;border-radius:50%;object-fit:cover;box-shadow:0 2px 8px rgba(52,152,219,0.12);margin-bottom:10px;">
+                                    <div class="user-avatar" style="padding:0;overflow:hidden;width:64px;height:64px;display:inline-block;vertical-align:middle;background:#3498db;color:#fff;font-weight:bold;font-size:2rem;text-align:center;line-height:64px;border-radius:50%;margin-bottom:10px;">
+                                        <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
+                                            <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                        <?php else: ?>
+                                            <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:2rem;font-weight:bold;color:#fff;">
+                                                <?php echo htmlspecialchars(getInitials($user['first_name'], $user['last_name'])); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                     <h5 class="card-title mb-0"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h5>
                                     <p class="card-text mb-0"><?php echo htmlspecialchars($user['student_id']); ?></p>
                                 </div>

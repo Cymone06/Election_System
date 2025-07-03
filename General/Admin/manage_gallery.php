@@ -34,17 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Handle delete
+// Handle delete (soft delete, silent)
 if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     $id = intval($_GET['delete']);
-    $stmt = $conn->prepare("UPDATE gallery SET status = 'deleted' WHERE id = ?");
+    // Soft delete: set deleted_at timestamp
+    $conn->query("ALTER TABLE gallery ADD COLUMN IF NOT EXISTS deleted_at DATETIME NULL");
+    $stmt = $conn->prepare("UPDATE gallery SET deleted_at = NOW() WHERE id = ?");
     $stmt->bind_param('i', $id);
-    if ($stmt->execute()) {
-        $success = 'Image moved to recovery archive.';
-    } else {
-        $error = 'Failed to delete image.';
-    }
+    $stmt->execute();
     $stmt->close();
+    // No success or error message shown to admin
 }
 
 // Handle description update
@@ -58,9 +57,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $success = 'Description updated.';
 }
 
-// Fetch all gallery images
+// Ensure 'deleted_at' column exists in gallery table
+$conn->query("ALTER TABLE gallery ADD COLUMN IF NOT EXISTS deleted_at DATETIME NULL");
+
+// Fetch all gallery images (only those not deleted)
 $images = [];
-$res = $conn->query("SELECT id, filename, description, uploaded_at FROM gallery WHERE status = 'active' ORDER BY uploaded_at DESC");
+$res = $conn->query("SELECT id, filename, description, uploaded_at FROM gallery WHERE deleted_at IS NULL ORDER BY uploaded_at DESC");
 while ($row = $res->fetch_assoc()) {
     $images[] = $row;
 }
@@ -111,7 +113,7 @@ while ($row = $res->fetch_assoc()) {
                                 <button type="submit" class="btn btn-sm btn-success w-100"><i class="fas fa-save me-1"></i>Save</button>
                             </form>
                             <div class="text-muted small mb-2"><i class="far fa-calendar-alt me-1"></i><?php echo date('M d, Y', strtotime($img['uploaded_at'])); ?></div>
-                            <a href="?delete=<?php echo $img['id']; ?>" class="btn btn-sm btn-danger w-100" onclick="return confirm('Are you sure you want to move this image to the recovery archive?');"><i class="fas fa-trash me-1"></i>Delete</a>
+                            <a href="?delete=<?php echo $img['id']; ?>" class="btn btn-sm btn-danger w-100" onclick="return confirm('Are you sure you want to delete this image?');"><i class="fas fa-trash me-1"></i>Delete</a>
                         </div>
                     </div>
                 </div>

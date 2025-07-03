@@ -145,6 +145,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             header('Location: manage_accounts.php?success=student_rejected');
             exit();
+        } elseif ($action === 'create') {
+            $first_name = trim($_POST['first_name'] ?? '');
+            $last_name = trim($_POST['last_name'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $admin_id = trim($_POST['admin_id'] ?? '');
+            $id_number = trim($_POST['id_number'] ?? '');
+            $gender = trim($_POST['gender'] ?? '');
+            $user_type = trim($_POST['user_type'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $status = 'active';
+            $errors = [];
+            if ($user_type === 'admin') {
+                // Validate required fields
+                if (!$first_name || !$last_name || !$email || !$admin_id || !$id_number || !$gender || !$password) {
+                    header('Location: manage_accounts.php?error=missing_fields'); exit();
+                }
+                // Check for duplicates
+                $exists = record_exists('users', 'email', $email) || record_exists('users', 'admin_id', $admin_id) || record_exists('users', 'id_number', $id_number);
+                if ($exists) {
+                    header('Location: manage_accounts.php?error=email_exists'); exit();
+                }
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $conn->prepare("INSERT INTO users (admin_id, id_number, email, phone_number, password, first_name, last_name, gender, role, status, created_at) VALUES (?, ?, ?, '', ?, ?, ?, ?, 'admin', ?, NOW())");
+                $stmt->bind_param('ssssssss', $admin_id, $id_number, $email, $hashed_password, $first_name, $last_name, $gender, $status);
+                if ($stmt->execute()) {
+                    $stmt->close();
+                    header('Location: manage_accounts.php?success=created'); exit();
+                } else {
+                    $stmt->close();
+                    header('Location: manage_accounts.php?error=creation_failed'); exit();
+                }
+            } elseif ($user_type === 'student') {
+                // Validate required fields
+                if (!$first_name || !$last_name || !$email || !$id_number || !$gender || !$password) {
+                    header('Location: manage_accounts.php?error=missing_fields'); exit();
+                }
+                // Generate a student_id (or use id_number as student_id if not provided)
+                $student_id = trim($_POST['student_id'] ?? $id_number);
+                // Check for duplicates
+                $exists = record_exists('students', 'email', $email) || record_exists('students', 'student_id', $student_id) || record_exists('students', 'id_number', $id_number);
+                if ($exists) {
+                    header('Location: manage_accounts.php?error=student_id_exists'); exit();
+                }
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $department = trim($_POST['department'] ?? 'General');
+                $course_level = trim($_POST['course_level'] ?? '');
+                $stmt = $conn->prepare("INSERT INTO students (first_name, last_name, student_id, email, id_number, phone_number, department, gender, password, agreed_terms, status, created_at) VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, 1, 'active', NOW())");
+                $stmt->bind_param('sssssssss', $first_name, $last_name, $student_id, $email, $id_number, $department, $gender, $hashed_password, $course_level);
+                if ($stmt->execute()) {
+                    $stmt->close();
+                    header('Location: manage_accounts.php?success=created'); exit();
+                } else {
+                    $stmt->close();
+                    header('Location: manage_accounts.php?error=creation_failed'); exit();
+                }
+            } else {
+                header('Location: manage_accounts.php?error=invalid_data'); exit();
+            }
         }
     }
 }
@@ -445,6 +503,8 @@ $stmt->close();
                         $message = 'Student account approved successfully.';
                     } elseif ($success === 'student_rejected') {
                         $message = 'Student account rejected successfully.';
+                    } elseif ($success === 'created') {
+                        $message = 'User created successfully.';
                     } else {
                         $message = 'Action completed successfully.';
                     }
@@ -481,6 +541,8 @@ $stmt->close();
                         $message = 'Invalid user selected.';
                     } elseif ($error === 'invalid_data') {
                         $message = 'Invalid data provided. Please check your input.';
+                    } elseif ($error === 'not_supported') {
+                        $message = 'Student account creation is not supported at this time.';
                     } else {
                         $message = 'An error occurred. Please try again.';
                     }
@@ -636,6 +698,8 @@ $stmt->close();
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Student/Admin ID</th>
+                                <th>ID Number</th>
+                                <th>Gender</th>
                                 <th>Designation</th>
                                 <th>Status</th>
                                 <th>Created</th>
@@ -661,6 +725,8 @@ $stmt->close();
                                         <td><?php echo htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')); ?></td>
                                         <td><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
                                         <td><?php echo htmlspecialchars($user['student_id'] ?? $user['admin_id'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($user['id_number'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($user['gender'] ?? ''); ?></td>
                                         <td>
                                             <?php
                                                 if (($user['role'] ?? '') === 'super_admin') {
@@ -728,6 +794,8 @@ $stmt->close();
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Admin ID</th>
+                                <th>ID Number</th>
+                                <th>Gender</th>
                                 <th>Status</th>
                                 <th>Created</th>
                                 <th>Actions</th>
@@ -743,6 +811,8 @@ $stmt->close();
                                         <td><?php echo htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')); ?></td>
                                         <td><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
                                         <td><?php echo htmlspecialchars($user['admin_id'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($user['id_number'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($user['gender'] ?? ''); ?></td>
                                         <td><span class="badge bg-<?php echo ($user['status'] ?? '') === 'active' ? 'success' : (($user['status'] ?? '') === 'pending' ? 'warning' : 'secondary'); ?>"><?php echo ucfirst($user['status'] ?? ''); ?></span></td>
                                         <td><?php echo htmlspecialchars($user['created_at'] ?? ''); ?></td>
                                         <td>
@@ -799,6 +869,8 @@ $stmt->close();
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Student ID</th>
+                                <th>ID Number</th>
+                                <th>Gender</th>
                                 <th>Status</th>
                                 <th>Created</th>
                                 <th>Actions</th>
@@ -814,6 +886,8 @@ $stmt->close();
                                         <td><?php echo htmlspecialchars(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')); ?></td>
                                         <td><?php echo htmlspecialchars($user['email'] ?? ''); ?></td>
                                         <td><?php echo htmlspecialchars($user['student_id'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($user['id_number'] ?? ''); ?></td>
+                                        <td><?php echo htmlspecialchars($user['gender'] ?? ''); ?></td>
                                         <td><span class="badge bg-<?php echo ($user['status'] ?? '') === 'active' ? 'success' : (($user['status'] ?? '') === 'pending' ? 'warning' : 'secondary'); ?>"><?php echo ucfirst($user['status'] ?? ''); ?></span></td>
                                         <td><?php echo htmlspecialchars($user['created_at'] ?? ''); ?></td>
                                         <td>
@@ -937,28 +1011,63 @@ $stmt->close();
                             </div>
                         </div>
                         
-                        <div class="row">
+                        <div class="row admin-fields">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <label for="modal_admin_id" class="form-label">Admin ID</label>
+                                    <input type="text" class="form-control" id="modal_admin_id" name="admin_id">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="admin_id" class="form-label">Admin ID</label>
-                                    <input type="text" class="form-control" id="admin_id" name="admin_id" required>
+                                    <label for="id_number" class="form-label">ID Number</label>
+                                    <input type="text" class="form-control" id="id_number" name="id_number">
                                 </div>
                             </div>
                         </div>
-                        
+                        <div class="row student-fields">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="student_id" class="form-label">Student ID</label>
+                                    <input type="text" class="form-control" id="student_id" name="student_id">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="department" class="form-label">Department</label>
+                                    <input type="text" class="form-control" id="department" name="department">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row student-fields">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="course_level" class="form-label">Course Level</label>
+                                    <input type="text" class="form-control" id="course_level" name="course_level">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="">Select gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="user_type" class="form-label">User Type</label>
-                                    <select class="form-select" id="user_type" name="user_type" required>
-                                        <option value="student">Student</option>
+                                    <select class="form-select" id="modal_user_type" name="user_type" required>
+                                        <option value="" selected disabled>Select user type</option>
                                         <option value="admin">Admin</option>
+                                        <option value="student">Student</option>
                                     </select>
                                 </div>
                             </div>
@@ -1072,6 +1181,27 @@ $stmt->close();
                 }
             }
         }
+
+        // Toggle student fields in Create User modal
+        document.addEventListener('DOMContentLoaded', function() {
+            var userTypeSelect = document.getElementById('modal_user_type');
+            var adminFields = document.querySelectorAll('#createUserModal .admin-fields');
+            var studentFields = document.querySelectorAll('#createUserModal .student-fields');
+            function toggleFields() {
+                if (userTypeSelect.value === 'student') {
+                    studentFields.forEach(function(el) { el.style.display = ''; });
+                    adminFields.forEach(function(el) { el.style.display = 'none'; });
+                } else if (userTypeSelect.value === 'admin') {
+                    studentFields.forEach(function(el) { el.style.display = 'none'; });
+                    adminFields.forEach(function(el) { el.style.display = ''; });
+                } else {
+                    studentFields.forEach(function(el) { el.style.display = 'none'; });
+                    adminFields.forEach(function(el) { el.style.display = 'none'; });
+                }
+            }
+            userTypeSelect.addEventListener('change', toggleFields);
+            toggleFields();
+        });
     </script>
 </body>
 </html>

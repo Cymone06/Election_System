@@ -192,28 +192,10 @@ if ($result) {
             </div>
         </div>
     </section>
-    <?php include '../includes/footer.php'; ?>
+    <!-- All main content ends here -->
+    <?php /* Move the footer to the very bottom */ ?>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Debug: Show computed --primary-color value -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var rootStyles = getComputedStyle(document.documentElement);
-        var primaryColor = rootStyles.getPropertyValue('--primary-color');
-        console.log('DEBUG: Computed --primary-color is', primaryColor);
-        var debugDiv = document.createElement('div');
-        debugDiv.style.position = 'fixed';
-        debugDiv.style.bottom = '10px';
-        debugDiv.style.right = '10px';
-        debugDiv.style.background = '#fff';
-        debugDiv.style.color = '#2c3e50';
-        debugDiv.style.padding = '8px 16px';
-        debugDiv.style.border = '1px solid #2c3e50';
-        debugDiv.style.zIndex = 9999;
-        debugDiv.style.fontSize = '14px';
-        debugDiv.innerText = 'DEBUG: --primary-color = ' + primaryColor;
-        document.body.appendChild(debugDiv);
-        setTimeout(function() { debugDiv.remove(); }, 8000);
-    });
-    </script>
+
+    <?php include '../includes/footer.php'; ?>
 </body>
 </html> 

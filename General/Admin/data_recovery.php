@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_election'])) 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_gallery_item'])) {
     $item_id = $_POST['item_id'];
-    $stmt = $conn->prepare("UPDATE gallery SET status = 'active' WHERE id = ? AND status = 'deleted'");
+    $stmt = $conn->prepare("UPDATE gallery SET deleted_at = NULL WHERE id = ?");
     $stmt->bind_param("i", $item_id);
     $stmt->execute();
     $stmt->close();
@@ -29,8 +29,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_gallery_item'
     exit();
 }
 
+// Handle permanent delete action for gallery items
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_gallery_item'])) {
+    $item_id = $_POST['item_id'];
+    // Fetch filename to delete the file from disk
+    $stmt = $conn->prepare("SELECT filename FROM gallery WHERE id = ?");
+    $stmt->bind_param("i", $item_id);
+    $stmt->execute();
+    $stmt->bind_result($filename);
+    $stmt->fetch();
+    $stmt->close();
+    if ($filename && file_exists("../uploads/gallery/" . $filename)) {
+        unlink("../uploads/gallery/" . $filename);
+    }
+    $stmt = $conn->prepare("DELETE FROM gallery WHERE id = ?");
+    $stmt->bind_param("i", $item_id);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: data_recovery.php?deleted_gallery=1");
+    exit();
+}
+
+// Handle permanent delete action for elections
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_election'])) {
+    $election_id = $_POST['election_id'];
+    $stmt = $conn->prepare("DELETE FROM election_periods WHERE id = ? AND status = 'deleted'");
+    $stmt->bind_param("i", $election_id);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: data_recovery.php?deleted_election=1");
+    exit();
+}
+
 // Auto-purge records older than 30 days
-$conn->query("DELETE FROM deleted_items WHERE deleted_at < NOW() - INTERVAL 30 DAY");
+$table_check = $conn->query("SHOW TABLES LIKE 'deleted_items'");
+if ($table_check && $table_check->num_rows > 0) {
+    $conn->query("DELETE FROM deleted_items WHERE deleted_at < NOW() - INTERVAL 30 DAY");
+}
 
 // Fetch all deleted elections
 $deleted_elections = [];
@@ -42,7 +77,7 @@ if ($result_elections) {
 
 // Fetch all deleted gallery items
 $deleted_gallery_items = [];
-$sql_gallery = "SELECT id, filename, description, uploaded_at FROM gallery WHERE status = 'deleted' ORDER BY uploaded_at DESC";
+$sql_gallery = "SELECT id, filename, description, uploaded_at, deleted_at FROM gallery WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC";
 $result_gallery = $conn->query($sql_gallery);
 if ($result_gallery) {
     $deleted_gallery_items = $result_gallery->fetch_all(MYSQLI_ASSOC);
@@ -108,10 +143,16 @@ if ($result_gallery) {
                                         <td><?php echo date('M d, Y H:i', strtotime($election['start_date'])); ?></td>
                                         <td><?php echo date('M d, Y H:i', strtotime($election['end_date'])); ?></td>
                                         <td>
-                                            <form method="POST" onsubmit="return confirm('Are you sure you want to restore this election?');">
+                                            <form method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to restore this election?');">
                                                 <input type="hidden" name="election_id" value="<?php echo $election['id']; ?>">
                                                 <button type="submit" name="restore_election" class="btn btn-success btn-sm">
                                                     <i class="fas fa-trash-restore me-1"></i> Restore
+                                                </button>
+                                            </form>
+                                            <form method="POST" style="display:inline-block; margin-left: 5px;" onsubmit="return confirm('This will permanently delete the election record. Continue?');">
+                                                <input type="hidden" name="election_id" value="<?php echo $election['id']; ?>">
+                                                <button type="submit" name="delete_election" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash-alt me-1"></i> Delete Permanently
                                                 </button>
                                             </form>
                                         </td>
@@ -151,12 +192,18 @@ if ($result_gallery) {
                                             <img src="../uploads/gallery/<?php echo htmlspecialchars($item['filename']); ?>" alt="Deleted Image" style="width: 100px; height: auto; border-radius: 5px;">
                                         </td>
                                         <td><?php echo htmlspecialchars($item['description']); ?></td>
-                                        <td><?php echo date('M d, Y H:i', strtotime($item['uploaded_at'])); ?></td>
+                                        <td><?php echo date('M d, Y H:i', strtotime($item['deleted_at'])); ?></td>
                                         <td>
-                                            <form method="POST" onsubmit="return confirm('Are you sure you want to restore this image?');">
+                                            <form method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to restore this image?');">
                                                 <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
                                                 <button type="submit" name="restore_gallery_item" class="btn btn-success btn-sm">
                                                     <i class="fas fa-trash-restore me-1"></i> Restore
+                                                </button>
+                                            </form>
+                                            <form method="POST" style="display:inline-block; margin-left: 5px;" onsubmit="return confirm('This will permanently delete the image record. Continue?');">
+                                                <input type="hidden" name="item_id" value="<?php echo $item['id']; ?>">
+                                                <button type="submit" name="delete_gallery_item" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash-alt me-1"></i> Delete Permanently
                                                 </button>
                                             </form>
                                         </td>

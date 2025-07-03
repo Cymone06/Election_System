@@ -9,15 +9,22 @@ if (!isset($conn) || !$conn instanceof mysqli || $conn->connect_error) {
 }
 
 // Robust session check
-if (!isset($_SESSION['student_db_id']) || !is_numeric($_SESSION['student_db_id'])) {
+$is_logged_in = isset($_SESSION['student_db_id']) && is_numeric($_SESSION['student_db_id']);
+if (!$is_logged_in) {
     $_SESSION['error'] = 'Please log in to apply for positions.';
     header('Location: login.php');
     exit();
 }
 
 // Check application portal status
-$portal_status_result = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'application_portal_status'");
-$application_portal_status = $portal_status_result->fetch_assoc()['setting_value'] ?? 'closed';
+$application_portal_status = 'closed';
+$table_check = $conn->query("SHOW TABLES LIKE 'system_settings'");
+if ($table_check && $table_check->num_rows > 0) {
+    $portal_status_result = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'application_portal_status'");
+    if ($portal_status_result) {
+        $application_portal_status = $portal_status_result->fetch_assoc()['setting_value'] ?? 'closed';
+    }
+}
 
 // Fetch user info for autofill
 $user_info = null;

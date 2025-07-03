@@ -168,13 +168,11 @@ if (isset($_POST['close_portal'])) {
     }
 }
 
-// Fetch all applications with position name
-$applications = [];
-$sql = "SELECT a.*, p.position_name FROM applications a JOIN positions p ON a.position_id = p.id ORDER BY a.created_at DESC";
-$result = $conn->query($sql);
-if ($result) {
-    $applications = $result->fetch_all(MYSQLI_ASSOC);
-}
+// Fetch applications with student info
+$stmt = $conn->prepare('SELECT a.*, s.first_name, s.last_name, s.department, s.student_id AS reg_student_id FROM applications a LEFT JOIN students s ON a.student_id = s.student_id ORDER BY a.created_at DESC');
+$stmt->execute();
+$applications = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -284,7 +282,11 @@ if ($result) {
                                                 <span class="text-muted">No Image</span>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?php echo htmlspecialchars($app['first_name'] . ' ' . $app['last_name']); ?></td>
+                                        <td>
+                                            <span class="fw-bold"><?php echo htmlspecialchars((!empty($app['first_name']) && !empty($app['last_name'])) ? $app['first_name'] . ' ' . $app['last_name'] : $app['first_name']); ?></span>
+                                            <span class="badge bg-secondary ms-1">ID: <?php echo !empty($app['reg_student_id']) ? htmlspecialchars($app['reg_student_id']) : htmlspecialchars($app['student_id']); ?></span>
+                                            <span class="badge bg-info ms-1">Dept: <?php echo !empty($app['department']) ? htmlspecialchars($app['department']) : htmlspecialchars($app['department']); ?></span>
+                                        </td>
                                         <td><?php echo htmlspecialchars($app['email']); ?></td>
                                         <td><?php echo htmlspecialchars($app['student_id']); ?></td>
                                         <td><?php echo htmlspecialchars($app['position_name']); ?></td>

@@ -38,12 +38,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // Verify password only if status is active
                 if (password_verify($password, $student['password'])) {
-                    // Check if 2FA PIN is set
+                    // Check if 2FA PIN is set (only if the column exists)
+                    $two_factor_pin = null;
+                    if ($conn->query("SHOW COLUMNS FROM students LIKE 'two_factor_pin'")->num_rows) {
                     $stmt2 = $conn->prepare('SELECT two_factor_pin FROM students WHERE id = ?');
                     $stmt2->bind_param('i', $student['id']);
                     $stmt2->execute();
                     $row2 = $stmt2->get_result()->fetch_assoc();
                     $stmt2->close();
+                        $two_factor_pin = $row2['two_factor_pin'] ?? null;
+                    }
+                    if ($two_factor_pin) {
+                        // Redirect to 2FA verification page (implement this page if not present)
+                        $_SESSION['pending_2fa_student_id'] = $student['id'];
+                        header('Location: verify_pin.php');
+                        exit;
+                    }
                     // Set basic session
                     $_SESSION['student_id'] = $student['id'];
                     $_SESSION['first_name'] = $student['first_name'];

@@ -1,57 +1,79 @@
 -- Election System Database Schema
 -- Drop tables if they exist (for clean setup)
+DROP TABLE IF EXISTS message_replies;
+DROP TABLE IF EXISTS admin_messages;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS answers;
+DROP TABLE IF EXISTS questions;
+DROP TABLE IF EXISTS gallery;
 DROP TABLE IF EXISTS votes;
 DROP TABLE IF EXISTS candidates;
 DROP TABLE IF EXISTS application_logs;
 DROP TABLE IF EXISTS applications;
 DROP TABLE IF EXISTS positions;
 DROP TABLE IF EXISTS password_resets;
+DROP TABLE IF EXISTS pin_resets;
+DROP TABLE IF EXISTS email_verifications;
+DROP TABLE IF EXISTS elected_officials;
+DROP TABLE IF EXISTS user_sessions;
 DROP TABLE IF EXISTS students;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS election_periods;
 DROP TABLE IF EXISTS updates;
-DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS news;
+DROP TABLE IF EXISTS current_candidates;
+DROP TABLE IF EXISTS deleted_items;
+DROP TABLE IF EXISTS system_settings;
 
--- Users table (for admin users)
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    admin_id VARCHAR(20) UNIQUE NOT NULL,
+    admin_id VARCHAR(20) UNIQUE,
     email VARCHAR(100) UNIQUE NOT NULL,
-    phone_number VARCHAR(20) NOT NULL,
+    phone_number VARCHAR(20),
     password VARCHAR(255) NOT NULL,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    gender VARCHAR(10),
+    course_level VARCHAR(50),
     role ENUM('student', 'admin', 'super_admin', 'election_officer') DEFAULT 'student',
     status ENUM('active', 'inactive', 'suspended', 'pending', 'rejected') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    id_number VARCHAR(50) UNIQUE,
+    two_factor_pin VARCHAR(10) DEFAULT NULL
 );
 
 -- Students table
 CREATE TABLE IF NOT EXISTS students (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    student_id VARCHAR(30) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    id_number VARCHAR(50) NOT NULL UNIQUE,
-    phone_number VARCHAR(20) NOT NULL,
-    department VARCHAR(100) NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    student_id VARCHAR(30) UNIQUE,
+    email VARCHAR(100) UNIQUE,
+    id_number VARCHAR(50) UNIQUE,
+    phone_number VARCHAR(20),
+    department VARCHAR(100),
+    gender VARCHAR(10),
+    course_level VARCHAR(50),
+    password VARCHAR(255),
     agreed_terms TINYINT(1) DEFAULT 0,
+    status ENUM('active', 'inactive', 'suspended', 'pending', 'rejected') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    profile_picture VARCHAR(255) NULL
+    profile_picture VARCHAR(255),
+    two_factor_pin VARCHAR(10) DEFAULT NULL
 );
 
--- Password resets table (for both users and students)
-CREATE TABLE IF NOT EXISTS password_resets (
+-- Election periods table
+CREATE TABLE IF NOT EXISTS election_periods (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    user_type ENUM('student', 'user') NOT NULL,
-    token VARCHAR(64) UNIQUE NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    used TINYINT(1) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    title VARCHAR(100) NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    status ENUM('upcoming', 'active', 'ended') DEFAULT 'upcoming',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Positions table
@@ -69,18 +91,18 @@ CREATE TABLE IF NOT EXISTS positions (
 -- Applications table
 CREATE TABLE IF NOT EXISTS applications (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    student_id VARCHAR(20) NOT NULL,
-    admission_number VARCHAR(30) NOT NULL,
-    year_of_admission YEAR NOT NULL,
-    year_of_graduation YEAR NOT NULL,
-    hometown VARCHAR(100) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    position_id INT NOT NULL,
-    biography TEXT NOT NULL,
-    goals TEXT NOT NULL,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    email VARCHAR(100),
+    student_id VARCHAR(20),
+    admission_number VARCHAR(30),
+    year_of_admission YEAR,
+    year_of_graduation YEAR,
+    hometown VARCHAR(100),
+    phone VARCHAR(20),
+    position_id INT,
+    biography TEXT,
+    goals TEXT,
     experience TEXT,
     skills TEXT,
     image1 VARCHAR(255),
@@ -94,8 +116,8 @@ CREATE TABLE IF NOT EXISTS applications (
 -- Application logs table
 CREATE TABLE IF NOT EXISTS application_logs (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    application_id INT NOT NULL,
-    action VARCHAR(50) NOT NULL,
+    application_id INT,
+    action VARCHAR(50),
     details TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (application_id) REFERENCES applications(id)
@@ -104,8 +126,8 @@ CREATE TABLE IF NOT EXISTS application_logs (
 -- Candidates table
 CREATE TABLE IF NOT EXISTS candidates (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    application_id INT NOT NULL,
-    position_id INT NOT NULL,
+    application_id INT,
+    position_id INT,
     status ENUM('active', 'inactive', 'disqualified') DEFAULT 'active',
     vetting_status ENUM('pending','verified','rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -117,10 +139,10 @@ CREATE TABLE IF NOT EXISTS candidates (
 -- Votes table
 CREATE TABLE IF NOT EXISTS votes (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    voter_id INT NOT NULL,
-    election_id INT NOT NULL,
-    candidate_id INT NOT NULL,
-    position_id INT NOT NULL,
+    voter_id INT,
+    election_id INT,
+    candidate_id INT,
+    position_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (voter_id) REFERENCES students(id),
     FOREIGN KEY (election_id) REFERENCES election_periods(id),
@@ -129,18 +151,27 @@ CREATE TABLE IF NOT EXISTS votes (
     UNIQUE KEY unique_vote (voter_id, position_id, election_id)
 );
 
--- Election periods table
-CREATE TABLE IF NOT EXISTS election_periods (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    title VARCHAR(100) NOT NULL,
-    start_date DATETIME NOT NULL,
-    end_date DATETIME NOT NULL,
-    status ENUM('upcoming', 'active', 'ended') DEFAULT 'upcoming',
+-- Gallery table
+CREATE TABLE IF NOT EXISTS gallery (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    description VARCHAR(255) DEFAULT NULL,
+    uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- News table
+CREATE TABLE IF NOT EXISTS news (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    image VARCHAR(255),
+    author_id INT NOT NULL DEFAULT 1,
+    status ENUM('draft','published','archived') DEFAULT 'draft',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- News/Updates table
+-- Updates table
 CREATE TABLE IF NOT EXISTS updates (
     id INT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(255) NOT NULL,
@@ -153,15 +184,49 @@ CREATE TABLE IF NOT EXISTS updates (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Merged from gallery_sample.sql
-CREATE TABLE IF NOT EXISTS gallery (
+-- Questions table
+CREATE TABLE IF NOT EXISTS questions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    filename VARCHAR(255) NOT NULL,
-    description VARCHAR(255) DEFAULT NULL,
-    uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    user_id INT NOT NULL DEFAULT 1,
+    question_text TEXT NOT NULL,
+    status ENUM('active','inactive','deleted') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Merged from user_sessions_table.sql
+-- Answers table
+CREATE TABLE IF NOT EXISTS answers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    question_id INT NOT NULL,
+    author_id INT NOT NULL DEFAULT 1,
+    answer_text TEXT NOT NULL,
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY question_unique (question_id)
+);
+
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_name VARCHAR(100) NOT NULL,
+    student_id VARCHAR(30) NOT NULL,
+    content TEXT NOT NULL,
+    rating INT DEFAULT 5,
+    status ENUM('pending','approved') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Current candidates table
+CREATE TABLE IF NOT EXISTS current_candidates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    hierarchy_order INT NOT NULL,
+    image VARCHAR(255) NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User sessions table
 CREATE TABLE IF NOT EXISTS user_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -175,53 +240,88 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     breach_flag TINYINT(1) DEFAULT 0
 );
 
--- Merged from news_qa_tables_fixed.sql
-CREATE TABLE IF NOT EXISTS `news` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `content` text NOT NULL,
-  `image` varchar(255) DEFAULT NULL,
-  `author_id` int(11) NOT NULL DEFAULT 1,
-  `status` enum('draft','published','archived') DEFAULT 'draft',
-  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `status` (`status`),
-  KEY `created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `questions` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL DEFAULT 1,
-  `question_text` text NOT NULL,
-  `status` enum('active','inactive','deleted') DEFAULT 'active',
-  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `status` (`status`),
-  KEY `created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS `answers` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `question_id` int(11) NOT NULL,
-  `author_id` int(11) NOT NULL DEFAULT 1,
-  `answer_text` text NOT NULL,
-  `answered_at` timestamp DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `question_id` (`question_id`),
-  UNIQUE KEY `question_unique` (`question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Table for current candidates (for homepage and admin management)
-CREATE TABLE IF NOT EXISTS current_candidates (
+-- Elected officials table
+CREATE TABLE IF NOT EXISTS elected_officials (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    position VARCHAR(100) NOT NULL,
-    hierarchy_order INT NOT NULL,
-    image VARCHAR(255) NOT NULL,
-    department VARCHAR(100) NOT NULL,
+    student_id INT NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    position_name VARCHAR(255) NOT NULL,
+    election_title VARCHAR(255) NOT NULL,
+    term_start_date DATE,
+    term_end_date DATE,
+    elected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- Email verifications table
+CREATE TABLE IF NOT EXISTS email_verifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    is_verified TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Pin resets table
+CREATE TABLE IF NOT EXISTS pin_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    user_type ENUM('student', 'admin') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Password resets table
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    user_type ENUM('student', 'user') NOT NULL,
+    token VARCHAR(64) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Messages table
+CREATE TABLE IF NOT EXISTS messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT,
+    sender_student_id INT,
+    recipient_admin_id INT,
+    parent_message_id INT,
+    type ENUM('info','success','warning','danger') DEFAULT 'info',
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- Admin messages table
+CREATE TABLE IF NOT EXISTS admin_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_admin_id INT NOT NULL,
+    recipient_admin_id INT NOT NULL,
+    type ENUM('info','success','warning','danger') DEFAULT 'info',
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_admin_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_admin_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Message replies table
+CREATE TABLE IF NOT EXISTS message_replies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    message_type ENUM('student','admin') NOT NULL,
+    message_id INT NOT NULL,
+    sender_admin_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_admin_id) REFERENCES users(id) ON DELETE CASCADE
+    -- message_id references messages.id or admin_messages.id depending on message_type
 );
 
 -- Insert sample positions
@@ -315,7 +415,8 @@ CREATE TABLE IF NOT EXISTS reviews (
     student_id VARCHAR(30) NOT NULL,
     content TEXT NOT NULL,
     status ENUM('pending','approved') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    rating INT DEFAULT 5
 );
 
 -- Table for student messages
@@ -327,7 +428,13 @@ CREATE TABLE IF NOT EXISTS messages (
     content TEXT NOT NULL,
     is_read TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    sender_student_id INT NULL DEFAULT NULL,
+    recipient_admin_id INT NULL DEFAULT NULL,
+    parent_message_id INT NULL DEFAULT NULL,
+    CONSTRAINT fk_parent_message FOREIGN KEY (parent_message_id) REFERENCES messages(id) ON DELETE CASCADE,
+    CONSTRAINT fk_sender_student FOREIGN KEY (sender_student_id) REFERENCES students(id) ON DELETE SET NULL,
+    CONSTRAINT fk_recipient_admin FOREIGN KEY (recipient_admin_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Table for admin-to-admin messages
@@ -354,4 +461,60 @@ CREATE TABLE IF NOT EXISTS message_replies (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_admin_id) REFERENCES users(id) ON DELETE CASCADE
     -- message_id references messages.id or admin_messages.id depending on message_type
-); 
+);
+
+-- Table for storing elected officials (winners)
+CREATE TABLE IF NOT EXISTS elected_officials (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    position_name VARCHAR(255) NOT NULL,
+    election_title VARCHAR(255) NOT NULL,
+    term_start_date DATE,
+    term_end_date DATE,
+    elected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- Table for email verification codes
+CREATE TABLE IF NOT EXISTS email_verifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    is_verified TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table for PIN reset requests
+CREATE TABLE IF NOT EXISTS pin_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    user_type ENUM('student', 'admin') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table for deleted items
+CREATE TABLE IF NOT EXISTS deleted_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    item_type VARCHAR(50),
+    item_identifier VARCHAR(100),
+    item_data TEXT,
+    deleted_by_user_id INT,
+    deleted_by_user_name VARCHAR(100),
+    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- System settings table
+CREATE TABLE IF NOT EXISTS system_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(100) NOT NULL UNIQUE,
+    setting_value VARCHAR(255) DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Insert default value for application portal status if not present
+INSERT INTO system_settings (setting_key, setting_value)
+VALUES ('application_portal_status', 'closed')
+ON DUPLICATE KEY UPDATE setting_value = setting_value;

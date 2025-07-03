@@ -103,6 +103,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// 1. Auto-update any 'upcoming' election to 'active' if its start_date has passed
+$conn->query("UPDATE election_periods SET status = 'active' WHERE status = 'upcoming' AND start_date <= NOW()");
+
+// 2. Fetch the next upcoming election (soonest start_date in the future)
+$next_upcoming_election = null;
+$next_upcoming_result = $conn->query("SELECT * FROM election_periods WHERE status = 'upcoming' AND start_date > NOW() ORDER BY start_date ASC LIMIT 1");
+if ($next_upcoming_result && $next_upcoming_result->num_rows > 0) {
+    $next_upcoming_election = $next_upcoming_result->fetch_assoc();
+}
+
 // Fetch all non-deleted elections
 $elections = $conn->query("SELECT * FROM election_periods WHERE status != 'deleted' ORDER BY start_date DESC")->fetch_all(MYSQLI_ASSOC);
 
@@ -110,14 +120,72 @@ $elections = $conn->query("SELECT * FROM election_periods WHERE status != 'delet
 $upcoming_elections_result = $conn->query("SELECT COUNT(*) as count FROM election_periods WHERE status = 'upcoming'");
 $upcoming_elections_count = $upcoming_elections_result->fetch_assoc()['count'] ?? 0;
 
-// Fetch application portal status
-$portal_status_result = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'application_portal_status'");
-$application_portal_status = $portal_status_result->fetch_assoc()['setting_value'] ?? 'closed';
+// Check if system_settings table exists before querying
+$table_check = $conn->query("SHOW TABLES LIKE 'system_settings'");
+if ($table_check && $table_check->num_rows > 0) {
+    // Fetch application portal status
+    $portal_status_result = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'application_portal_status'");
+    $application_portal_status = $portal_status_result->fetch_assoc()['setting_value'] ?? 'closed';
+} else {
+    $application_portal_status = 'closed';
+}
 
 require_once 'admin_header.php';
 ?>
 <div class="main-content">
     <div class="container-fluid">
+        <?php if ($next_upcoming_election): ?>
+            <?php
+                $start_time = strtotime($next_upcoming_election['start_date']);
+                $now = time();
+                $diff = $start_time - $now;
+                $less_than_24h = $diff > 0 && $diff <= 86400;
+            ?>
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow border-primary" style="background: linear-gradient(90deg, #e3f2fd 60%, #bbdefb 100%);">
+                        <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between">
+                            <div>
+                                <h5 class="mb-2 text-primary"><i class="fas fa-hourglass-start me-2"></i>Upcoming Election</h5>
+                                <div class="fw-bold fs-5 mb-1"><?php echo htmlspecialchars($next_upcoming_election['title']); ?></div>
+                                <div class="text-muted">Starts: <?php echo date('M d, Y H:i', $start_time); ?></div>
+                            </div>
+                            <?php if ($less_than_24h): ?>
+                                <div class="countdown-box text-center mt-3 mt-md-0">
+                                    <div class="fw-bold text-secondary mb-1">Election starts in:</div>
+                                    <div id="election-countdown" class="display-6 fw-bold text-primary"></div>
+                                </div>
+                                <script>
+                                function startCountdown(targetTime) {
+                                    function updateCountdown() {
+                                        var now = new Date().getTime();
+                                        var distance = targetTime - now;
+                                        if (distance < 0) {
+                                            document.getElementById('election-countdown').innerHTML = 'Starting soon...';
+                                            clearInterval(timer);
+                                            return;
+                                        }
+                                        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                        document.getElementById('election-countdown').innerHTML = hours + 'h ' + minutes + 'm ' + seconds + 's';
+                                    }
+                                    updateCountdown();
+                                    var timer = setInterval(updateCountdown, 1000);
+                                }
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    var targetTime = <?php echo ($start_time * 1000); ?>;
+                                    startCountdown(targetTime);
+                                });
+                                </script>
+                            <?php else: ?>
+                                <div class="text-info fw-bold fs-6 mt-3 mt-md-0">Election starts in more than 24 hours.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
         <div class="row">
             <div class="col-12">
                 <div class="card shadow-sm mt-4">

@@ -23,11 +23,11 @@
                     <h6 class="text-white mb-3">Contact</h6>
                     <p class="text-white-50 mb-1">
                         <i class="fas fa-envelope me-2"></i>
-                        admin@stvc.edu
+                        semestvcs@gmailcom
                     </p>
                     <p class="text-white-50 mb-1">
                         <i class="fas fa-phone me-2"></i>
-                        +1 (555) 123-4567
+                        +1254 741 247 188
                     </p>
                     <p class="text-white-50">
                         <i class="fas fa-map-marker-alt me-2"></i>

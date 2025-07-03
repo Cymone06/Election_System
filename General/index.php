@@ -78,6 +78,13 @@ $background_images = [
     'https://images.unsplash.com/photo-1509023464722-18d996393ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'
 ];
 
+// Fetch the next upcoming election (soonest start_date in the future)
+$next_upcoming_election = null;
+$next_upcoming_result = $conn->query("SELECT * FROM election_periods WHERE status = 'upcoming' AND start_date > NOW() ORDER BY start_date ASC LIMIT 1");
+if ($next_upcoming_result && $next_upcoming_result->num_rows > 0) {
+    $next_upcoming_election = $next_upcoming_result->fetch_assoc();
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -706,6 +713,196 @@ $background_images = [
             <?php endif; ?>
         </div>
     </section>
+
+    <!-- Upcoming Election Countdown Section -->
+    <?php if ($next_upcoming_election): ?>
+        <?php
+            $start_time = strtotime($next_upcoming_election['start_date']);
+            $end_time = strtotime($next_upcoming_election['end_date']);
+            $now = time();
+            $diff = $start_time - $now;
+            $less_than_24h = $diff > 0 && $diff <= 86400;
+        ?>
+        <section class="py-4 animate-fadeInUp">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card shadow border-primary" style="background: linear-gradient(90deg, #e3f2fd 60%, #bbdefb 100%);">
+                            <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between">
+                                <div>
+                                    <h5 class="mb-2 text-primary"><i class="fas fa-hourglass-start me-2"></i>Upcoming Election</h5>
+                                    <div class="fw-bold fs-5 mb-1"><?php echo htmlspecialchars($next_upcoming_election['title']); ?></div>
+                                    <div class="text-muted">Starts: <?php echo date('M d, Y H:i', $start_time); ?></div>
+                                    <div class="text-muted">Ends: <span class="fw-semibold text-danger"><?php echo date('M d, Y H:i', $end_time); ?></span></div>
+                                </div>
+                                <?php if ($less_than_24h): ?>
+                                    <div class="countdown-box text-center mt-3 mt-md-0">
+                                        <div class="fw-bold text-secondary mb-1">Election starts in:</div>
+                                        <div id="election-countdown" class="display-6 fw-bold text-primary"></div>
+                                    </div>
+                                    <script>
+                                    function startCountdown(targetTime) {
+                                        var lastSpoken = null;
+                                        var spokenDone = false;
+                                        function getKenyanMaleVoice() {
+                                            var voices = window.speechSynthesis.getVoices();
+                                            // Try to find a Kenyan English male voice
+                                            for (var i = 0; i < voices.length; i++) {
+                                                if ((voices[i].lang === 'en-KE' || voices[i].lang === 'en-GB' || voices[i].lang === 'en-US') && voices[i].name.toLowerCase().includes('male')) {
+                                                    return voices[i];
+                                                }
+                                            }
+                                            // Fallback: any Kenyan English
+                                            for (var i = 0; i < voices.length; i++) {
+                                                if (voices[i].lang === 'en-KE') return voices[i];
+                                            }
+                                            // Fallback: any English
+                                            for (var i = 0; i < voices.length; i++) {
+                                                if (voices[i].lang.startsWith('en')) return voices[i];
+                                            }
+                                            return null;
+                                        }
+                                        function updateCountdown() {
+                                            var now = new Date().getTime();
+                                            var distance = targetTime - now;
+                                            if (distance < 0) {
+                                                document.getElementById('election-countdown').innerHTML = 'Starting soon...';
+                                                clearInterval(timer);
+                                                if (!spokenDone) {
+                                                    // Optionally, announce that the election has started
+                                                    if ('speechSynthesis' in window) {
+                                                        var utter = new SpeechSynthesisUtterance('The election has started');
+                                                        var voice = getKenyanMaleVoice();
+                                                        if (voice) utter.voice = voice;
+                                                        utter.rate = 1.0;
+                                                        utter.pitch = 0.7;
+                                                        window.speechSynthesis.speak(utter);
+                                                    }
+                                                    spokenDone = true;
+                                                }
+                                                // Show live results section if hidden
+                                                var liveResultsSection = document.getElementById('live-results');
+                                                if (liveResultsSection) liveResultsSection.style.display = '';
+                                                return;
+                                            }
+                                            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                            document.getElementById('election-countdown').innerHTML = hours + 'h ' + minutes + 'm ' + seconds + 's';
+                                            // Voice countdown for last 10 seconds
+                                            if (distance <= 10000 && distance > 0 && seconds !== lastSpoken) {
+                                                if ('speechSynthesis' in window) {
+                                                    var utter = new SpeechSynthesisUtterance(seconds.toString());
+                                                    var voice = getKenyanMaleVoice();
+                                                    if (voice) utter.voice = voice;
+                                                    utter.rate = 1.0;
+                                                    utter.pitch = 0.7;
+                                                    window.speechSynthesis.speak(utter);
+                                                    lastSpoken = seconds;
+                                                }
+                                            }
+                                        }
+                                        // Wait for voices to be loaded
+                                        if ('speechSynthesis' in window && typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+                                            window.speechSynthesis.onvoiceschanged = function() {
+                                                updateCountdown();
+                                            };
+                                        }
+                                        updateCountdown();
+                                        var timer = setInterval(updateCountdown, 1000);
+                                    }
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        var countdownElem = document.getElementById('election-countdown');
+                                        if (countdownElem) {
+                                            var targetTime = <?php echo isset($start_time) ? ($start_time * 1000) : 'null'; ?>;
+                                            if (targetTime) startCountdown(targetTime);
+                                        }
+                                        // Hide live results section if election hasn't started
+                                        var liveResultsSection = document.getElementById('live-results');
+                                        if (liveResultsSection && <?php echo isset($next_upcoming_election) && $next_upcoming_election ? 'true' : 'false'; ?>) {
+                                            liveResultsSection.style.display = 'none';
+                                        }
+                                    });
+                                    </script>
+                                <?php else: ?>
+                                    <div class="text-info fw-bold fs-6 mt-3 mt-md-0">Election starts in more than 24 hours.</div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <!-- Active Election Ending Countdown Section -->
+    <?php if ($active_election): ?>
+        <?php
+            $end_time = strtotime($active_election['end_date']);
+            $now = time();
+            $time_left = $end_time - $now;
+            $less_than_10min = $time_left > 0 && $time_left <= 600;
+        ?>
+        <?php if ($less_than_10min): ?>
+        <section class="py-4 animate-fadeInUp">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card shadow border-danger" style="background: linear-gradient(90deg, #fff3e0 60%, #ffccbc 100%);">
+                            <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between">
+                                <div>
+                                    <h5 class="mb-2 text-danger"><i class="fas fa-hourglass-end me-2"></i>Election Ending Soon</h5>
+                                    <div class="fw-bold fs-5 mb-1"><?php echo htmlspecialchars($active_election['title']); ?></div>
+                                    <div class="text-muted">Ends: <span class="fw-semibold text-danger"><?php echo date('M d, Y H:i', $end_time); ?></span></div>
+                                </div>
+                                <div class="countdown-box text-center mt-3 mt-md-0">
+                                    <div class="fw-bold text-danger mb-1">Election ends in:</div>
+                                    <div id="election-end-countdown" class="display-6 fw-bold text-danger"></div>
+                                </div>
+                                <script>
+                                function startEndCountdown(targetTime) {
+                                    var lastSpokenEnd = null;
+                                    function updateCountdown() {
+                                        var now = new Date().getTime();
+                                        var distance = targetTime - now;
+                                        if (distance < 0) {
+                                            document.getElementById('election-end-countdown').innerHTML = 'Election Over';
+                                            clearInterval(timer);
+                                            return;
+                                        }
+                                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                        document.getElementById('election-end-countdown').innerHTML = minutes + 'm ' + seconds + 's';
+                                        // Voice countdown for last 10 seconds
+                                        if (distance <= 10000 && distance > 0 && seconds !== lastSpokenEnd) {
+                                            if ('speechSynthesis' in window) {
+                                                var utter = new SpeechSynthesisUtterance(seconds.toString());
+                                                utter.rate = 1.1;
+                                                utter.pitch = 1.2;
+                                                window.speechSynthesis.speak(utter);
+                                                lastSpokenEnd = seconds;
+                                            }
+                                        }
+                                    }
+                                    updateCountdown();
+                                    var timer = setInterval(updateCountdown, 1000);
+                                }
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    var endCountdownElem = document.getElementById('election-end-countdown');
+                                    if (endCountdownElem) {
+                                        var targetTime = <?php echo isset($end_time) ? ($end_time * 1000) : 'null'; ?>;
+                                        if (targetTime) startEndCountdown(targetTime);
+                                    }
+                                });
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
+    <?php endif; ?>
 
     <!-- Live Results Section -->
     <?php if ($active_election_id && !empty($live_results)): ?>

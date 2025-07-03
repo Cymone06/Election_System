@@ -6,7 +6,7 @@ require_once 'config/connect.php';
 $applicant_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $applicant = null;
 if ($applicant_id) {
-    $sql = "SELECT a.*, p.position_name FROM applications a JOIN positions p ON a.position_id = p.id WHERE a.id = ?";
+    $sql = "SELECT a.*, p.position_name, s.first_name, s.last_name, s.department, s.student_id AS reg_student_id FROM applications a JOIN positions p ON a.position_id = p.id LEFT JOIN students s ON a.student_id = s.student_id WHERE a.id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('i', $applicant_id);
     $stmt->execute();
@@ -107,7 +107,9 @@ if (!$applicant) {
     <div class="details-container mx-auto">
         <div class="details-header">
             <h2><i class="fas fa-user me-2"></i>Application Details</h2>
-            <p>Full details for <?php echo htmlspecialchars($applicant['first_name'] . ' ' . $applicant['last_name']); ?></p>
+            <p>Full details for <span class="fw-bold"><?php echo htmlspecialchars((!empty($applicant['first_name']) && !empty($applicant['last_name'])) ? $applicant['first_name'] . ' ' . $applicant['last_name'] : $applicant['first_name']); ?></span>
+            <span class="badge bg-secondary ms-1">ID: <?php echo !empty($applicant['reg_student_id']) ? htmlspecialchars($applicant['reg_student_id']) : htmlspecialchars($applicant['student_id']); ?></span>
+            <span class="badge bg-info ms-1">Dept: <?php echo !empty($applicant['department']) ? htmlspecialchars($applicant['department']) : htmlspecialchars($applicant['department']); ?></span></p>
         </div>
         <div class="details-body">
             <div class="text-center">

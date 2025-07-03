@@ -94,6 +94,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
     if (empty($phone_number)) $errors[] = 'Phone number is required.';
     if (empty($department)) $errors[] = 'Department is required.';
 
+    // Fetch current email from DB
+    $stmt = $conn->prepare('SELECT email FROM students WHERE id = ?');
+    $stmt->bind_param('i', $student_db_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $current_email = $row['email'] ?? '';
+
+    $email_changed = ($email !== $current_email);
+
     if (!empty($new_password) || !empty($confirm_password)) {
         if (empty($current_password)) {
             $errors[] = 'Current password is required to change password.';
@@ -117,22 +127,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
     }
 
     if (empty($errors)) {
-        if (!empty($new_password)) {
-            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare('UPDATE students SET first_name=?, last_name=?, email=?, phone_number=?, department=?, password=? WHERE id=?');
-            $stmt->bind_param('ssssssi', $first_name, $last_name, $email, $phone_number, $department, $hashed_password, $student_db_id);
+        if ($email_changed) {
+            // Generate verification code
+            $verification_code = random_int(100000, 999999);
+            $_SESSION['pending_email_update'] = [
+                'user_type' => 'student',
+                'user_id' => $student_db_id,
+                'new_email' => $email,
+                'code' => $verification_code,
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'phone_number' => $phone_number,
+                'department' => $department,
+                'new_password' => !empty($new_password) ? password_hash($new_password, PASSWORD_DEFAULT) : null
+            ];
+            require_once __DIR__ . '/includes/email_helper.php';
+            sendSystemEmail($email, 'Verify Your New Email', "Your verification code is: <b>$verification_code</b>");
+            header('Location: verify_new_email.php');
+            exit();
         } else {
-            $stmt = $conn->prepare('UPDATE students SET first_name=?, last_name=?, email=?, phone_number=?, department=? WHERE id=?');
-            $stmt->bind_param('sssssi', $first_name, $last_name, $email, $phone_number, $department, $student_db_id);
+            if (!empty($new_password)) {
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                $stmt = $conn->prepare('UPDATE students SET first_name=?, last_name=?, phone_number=?, department=?, password=? WHERE id=?');
+                $stmt->bind_param('sssssi', $first_name, $last_name, $phone_number, $department, $hashed_password, $student_db_id);
+            } else {
+                $stmt = $conn->prepare('UPDATE students SET first_name=?, last_name=?, phone_number=?, department=? WHERE id=?');
+                $stmt->bind_param('ssssi', $first_name, $last_name, $phone_number, $department, $student_db_id);
+            }
+            if ($stmt->execute()) {
+                $success = 'Profile updated successfully.';
+                $_SESSION['first_name'] = $first_name;
+                $_SESSION['last_name'] = $last_name;
+            } else {
+                $error = 'Failed to update profile. Please try again.';
+            }
+            $stmt->close();
         }
-        if ($stmt->execute()) {
-            $success = 'Profile updated successfully.';
-            $_SESSION['first_name'] = $first_name;
-            $_SESSION['last_name'] = $last_name;
-        } else {
-            $error = 'Failed to update profile. Please try again.';
-        }
-        $stmt->close();
     } else {
         $error = implode('<br>', $errors);
     }
@@ -360,7 +390,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
     </div>
         <div class="profile-card">
             <div class="profile-avatar mb-3">
-            <img src="<?php echo htmlspecialchars($profile_pic_path); ?>" alt="Profile Picture">
+                <?php if (!empty($user['profile_picture']) && file_exists($user['profile_picture'])): ?>
+                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture">
+                <?php else: ?>
+                    <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:3rem;font-weight:bold;">
+                        <?php
+                        $initials = '';
+                        if (!empty($user['first_name'])) $initials .= strtoupper($user['first_name'][0]);
+                        if (!empty($user['last_name'])) $initials .= strtoupper($user['last_name'][0]);
+                        echo htmlspecialchars($initials);
+                        ?>
+                    </span>
+                <?php endif; ?>
             </div>
         <div class="text-center mb-3">
                 <form method="POST" enctype="multipart/form-data" style="display:inline-block;">

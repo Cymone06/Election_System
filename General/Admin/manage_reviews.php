@@ -71,8 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['review_id'], $_POST['
 // Auto-delete reviews older than 20 days
 $conn->query("DELETE FROM reviews WHERE created_at < (NOW() - INTERVAL 20 DAY)");
 
-// Fetch all reviews
-$result = $conn->query("SELECT * FROM reviews ORDER BY created_at DESC");
+// Fetch all reviews with student info
+$result = $conn->query("SELECT r.*, s.first_name, s.last_name, s.student_id AS reg_student_id FROM reviews r LEFT JOIN students s ON r.student_id = s.id ORDER BY r.created_at DESC");
 $reviews = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 ?>
 <!DOCTYPE html>
@@ -151,8 +151,8 @@ $reviews = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
                         <?php foreach ($reviews as $i => $review): ?>
                             <tr>
                                 <td><?php echo $i+1; ?></td>
-                                <td><?php echo htmlspecialchars($review['student_name']); ?></td>
-                                <td><?php echo htmlspecialchars($review['student_id']); ?></td>
+                                <td><?php echo htmlspecialchars((!empty($review['first_name']) && !empty($review['last_name'])) ? $review['first_name'] . ' ' . $review['last_name'] : $review['student_name']); ?></td>
+                                <td><?php echo htmlspecialchars(!empty($review['reg_student_id']) ? $review['reg_student_id'] : $review['student_id']); ?></td>
                                 <td><?php echo htmlspecialchars($review['content']); ?></td>
                                 <td>
                                     <?php $rating = isset($review['rating']) ? (int)$review['rating'] : 5; ?>

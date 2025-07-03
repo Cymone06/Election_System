@@ -41,19 +41,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
         // Insert user into DB
         if ($type === 'student') {
-            $stmt = $conn->prepare('INSERT INTO students (first_name, last_name, student_id, email, id_number, phone_number, gender, department, course_level, password, agreed_terms, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            $status = 'pending';
-            $stmt->bind_param('ssssssssssis', $data['first_name'], $data['last_name'], $data['student_id'], $data['email'], $data['id_number'], $data['phone_number'], $data['gender'], $data['department'], $data['course_level'], $data['password'], $data['agreed_terms'], $status);
+            $stmt = $conn->prepare('INSERT INTO students (first_name, last_name, student_id, email, id_number, phone_number, gender, department, course_level, password, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", NOW())');
+            $stmt->bind_param('ssssssssss', 
+                $data['firstName'], 
+                $data['lastName'], 
+                $data['studentId'], 
+                $data['email'], 
+                $data['idNumber'], 
+                $data['phone'], 
+                $data['gender'], 
+                $data['department'], 
+                $data['courseLevel'], 
+                $data['password']
+            );
             $stmt->execute();
             $stmt->close();
             $success = 'Email verified and registration complete! You may now log in.';
         } else if ($type === 'admin') {
+            // Check if a super admin exists
+            $superAdminExists = false;
+            $check = $conn->query("SELECT COUNT(*) as cnt FROM users WHERE role = 'super_admin'");
+            if ($check) {
+                $row = $check->fetch_assoc();
+                $superAdminExists = ($row && $row['cnt'] > 0);
+            }
+            if (!$superAdminExists) {
+                // First admin: make super_admin, active, and log in
+                $stmt = $conn->prepare('INSERT INTO users (admin_id, id_number, email, phone_number, password, first_name, last_name, gender, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "super_admin", "active", NOW())');
+                $stmt->bind_param('ssssssss', $data['adminId'], $data['idNumber'], $data['email'], $data['phone'], $data['password'], $data['firstName'], $data['lastName'], $data['gender']);
+                $stmt->execute();
+                $new_admin_id = $stmt->insert_id;
+                $stmt->close();
+
+                // Log in the new super admin and redirect to dashboard
+                $_SESSION['user_id'] = $new_admin_id;
+                $_SESSION['email'] = $data['email'];
+                $_SESSION['first_name'] = $data['firstName'];
+                $_SESSION['last_name'] = $data['lastName'];
+                $_SESSION['user_type'] = 'super_admin';
+                $_SESSION['is_admin'] = true;
+                $_SESSION['is_super_admin'] = true;
+                $_SESSION['2fa_verified'] = true;
+                unset($_SESSION['pending_registration']);
+                header('Location: Admin/admin_dashboard.php');
+                exit;
+            } else {
             // All new admins are regular admins, pending approval
-            $stmt = $conn->prepare('INSERT INTO users (admin_id, email, phone_number, password, first_name, last_name, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, "admin", "pending", NOW())');
-            $stmt->bind_param('ssssss', $data['adminId'], $data['email'], $data['phone'], $data['password'], $data['firstName'], $data['lastName']);
+            $stmt = $conn->prepare('INSERT INTO users (admin_id, id_number, email, phone_number, password, first_name, last_name, gender, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, "admin", "pending", NOW())');
+            $stmt->bind_param('ssssssss', $data['adminId'], $data['idNumber'], $data['email'], $data['phone'], $data['password'], $data['firstName'], $data['lastName'], $data['gender']);
             $stmt->execute();
             $stmt->close();
             $success = 'Email verified and registration complete! Your account is pending approval.';
+            }
         }
         unset($_SESSION['pending_registration']);
     }
