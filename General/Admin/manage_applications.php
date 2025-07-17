@@ -48,9 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
-        // 4. Delete all records from the applications and candidates tables
+        // 4. Delete all records from the votes, candidates, application_logs, and applications tables (in this order)
+        $conn->query("DELETE FROM votes");
         $conn->query("DELETE FROM candidates");
-        $conn->query("TRUNCATE TABLE applications");
+        $conn->query("DELETE FROM application_logs");
+        $conn->query("DELETE FROM applications");
 
         // 5. Delete the actual image files
         foreach ($files_to_delete as $file) {
@@ -289,7 +291,7 @@ $stmt->close();
                                         </td>
                                         <td><?php echo htmlspecialchars($app['email']); ?></td>
                                         <td><?php echo htmlspecialchars($app['student_id']); ?></td>
-                                        <td><?php echo htmlspecialchars($app['position_name']); ?></td>
+                                        <td><?php echo isset($app['position_name']) ? htmlspecialchars($app['position_name']) : '<span class="text-warning">N/A</span>'; ?></td>
                                         <td><span class="status-badge status-<?php echo htmlspecialchars($app['status']); ?>"><?php echo ucfirst($app['status']); ?></span></td>
                                         <td><span class="status-badge vetting-<?php echo htmlspecialchars($app['vetting_status']); ?>"><?php echo ucfirst($app['vetting_status']); ?></span></td>
                                         <td><?php echo date('M d, Y H:i', strtotime($app['created_at'])); ?></td>

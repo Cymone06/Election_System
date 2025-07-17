@@ -25,6 +25,8 @@ DROP TABLE IF EXISTS news;
 DROP TABLE IF EXISTS current_candidates;
 DROP TABLE IF EXISTS deleted_items;
 DROP TABLE IF EXISTS system_settings;
+DROP TABLE IF EXISTS news_images;
+DROP TABLE IF EXISTS updates_images;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
@@ -159,14 +161,17 @@ CREATE TABLE IF NOT EXISTS gallery (
     uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- News table
+-- News table with all enhanced features
 CREATE TABLE IF NOT EXISTS news (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    image VARCHAR(255),
+    image VARCHAR(255), -- legacy single image, optional
     author_id INT NOT NULL DEFAULT 1,
     status ENUM('draft','published','archived') DEFAULT 'draft',
+    publish_date DATE DEFAULT NULL, -- for scheduling
+    is_important TINYINT(1) DEFAULT 0, -- for newsletter
+    newsletter_sent TINYINT(1) DEFAULT 0, -- track if newsletter sent
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -518,3 +523,55 @@ CREATE TABLE IF NOT EXISTS system_settings (
 INSERT INTO system_settings (setting_key, setting_value)
 VALUES ('application_portal_status', 'closed')
 ON DUPLICATE KEY UPDATE setting_value = setting_value;
+
+-- Table to store candidate likes (by user or guest IP)
+CREATE TABLE IF NOT EXISTS candidate_likes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    candidate_id INT NOT NULL,
+    user_id INT DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_like (candidate_id, user_id, ip_address),
+    FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- Table to store candidate bookmarks (only for logged-in users)
+CREATE TABLE IF NOT EXISTS candidate_bookmarks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    candidate_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_bookmark (candidate_id, user_id),
+    FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES students(id) ON DELETE CASCADE
+);
+
+-- Newsletter Subscribers Table
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add is_important and newsletter_sent columns to news table
+ALTER TABLE news ADD COLUMN is_important TINYINT(1) DEFAULT 0;
+ALTER TABLE news ADD COLUMN newsletter_sent TINYINT(1) DEFAULT 0;
+
+-- Table for multiple images per news item (gallery support)
+CREATE TABLE IF NOT EXISTS news_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    news_id INT NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
+);
+
+-- Table for multiple images per update (updates_images)
+CREATE TABLE IF NOT EXISTS updates_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    update_id INT NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (update_id) REFERENCES updates(id) ON DELETE CASCADE
+);

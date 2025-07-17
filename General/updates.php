@@ -1,4 +1,5 @@
 <?php
+require_once 'config/session_config.php';
 require_once 'config/database.php';
 
 // Get the update ID from the URL
@@ -135,9 +136,16 @@ if (isset($_SESSION['student_db_id'])) {
                     <li class="nav-item">
                         <a class="nav-link" href="index.php"><i class="fas fa-home me-1"></i> Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="login.php"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
-                    </li>
+                    <?php if (isset($user) && $user): ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.php"><i class="fas fa-tachometer-alt me-1"></i> Dashboard</a>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.php"><i class="fas fa-sign-in-alt me-1"></i> Login</a>
+                        </li>
+                    <?php endif; ?>
+                    <?php if (isset($user) && $user): ?>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <img src="<?php echo $profile_pic_path; ?>" alt="Profile" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;">
@@ -147,6 +155,11 @@ if (isset($_SESSION['student_db_id'])) {
                             <li><a class="dropdown-item" href="logout.php">Logout</a></li>
                         </ul>
                     </li>
+                    <?php else: ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="login.php"><i class="fas fa-user me-1"></i> Profile</a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>

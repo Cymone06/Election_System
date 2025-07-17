@@ -25,4 +25,16 @@ function sendSystemEmail($to, $subject, $body, $toName = '') {
         // Optionally log $mail->ErrorInfo
         return false;
     }
+}
+
+function sendNewsletterToAllSubscribers($conn, $subject, $body) {
+    $result = $conn->query('SELECT email FROM newsletter_subscribers');
+    if (!$result) return 0;
+    $count = 0;
+    while ($row = $result->fetch_assoc()) {
+        if (sendSystemEmail($row['email'], $subject, $body)) {
+            $count++;
+        }
+    }
+    return $count;
 } 

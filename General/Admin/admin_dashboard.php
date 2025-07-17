@@ -300,7 +300,7 @@ if ($is_super_admin) {
                          </div>
                     </div>
 
-                    <!-- Remove My Messages card and add Send Message and Inbox cards -->
+                    <!-- Send Message Card (now with Inbox link) -->
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="action-card text-center d-flex flex-column h-100">
                             <div class="flex-grow-1">
@@ -308,17 +308,19 @@ if ($is_super_admin) {
                                 <h5>Send Message</h5>
                                 <p class="text-muted">Send announcements or notifications to students, admins, or all users.</p>
                             </div>
-                            <a href="send_message.php" class="btn btn-admin mt-3 align-self-start">Go to Send Message</a>
+                            <a href="send_message.php" class="btn btn-admin mt-3 align-self-start mb-2">Go to Send Message</a>
+                            <a href="admin_messages.php" class="btn btn-outline-primary mt-1 align-self-start">Go to Inbox</a>
                         </div>
                     </div>
+                    <!-- Manage News & Updates Card (replaces Inbox card) -->
                     <div class="col-md-6 col-lg-4 mb-4">
                         <div class="action-card text-center d-flex flex-column h-100">
                             <div class="flex-grow-1">
-                                <i class="fas fa-inbox fa-3x text-primary mb-3"></i>
-                                <h5>Inbox</h5>
-                                <p class="text-muted">View and reply to all received messages and conversations.</p>
+                                <i class="fas fa-newspaper fa-3x text-success mb-3"></i>
+                                <h5>Manage News & Updates</h5>
+                                <p class="text-muted">Create, edit, and publish news or updates for the system.</p>
                             </div>
-                            <a href="admin_messages.php" class="btn btn-admin mt-3 align-self-start">Go to Inbox</a>
+                            <a href="manage_contents.php" class="btn btn-admin mt-3 align-self-start">Go to News & Updates</a>
                         </div>
                     </div>
 
@@ -331,6 +333,20 @@ if ($is_super_admin) {
                                 <p class="text-muted">Access data recovery options.</p>
                             </div>
                             <a href="data_recovery.php" class="btn btn-danger mt-3 align-self-start">Go to Recovery</a>
+                        </div>
+                    </div>
+                    <!-- Newsletter Management Card -->
+                    <div class="col-md-4 mb-4">
+                        <div class="action-card h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="mb-3"><i class="fas fa-envelope-open-text text-primary me-2"></i>Newsletter Management</h5>
+                                <p class="text-muted">Manage your newsletter subscribers, send important news, and keep your audience engaged.</p>
+                            </div>
+                            <div class="mt-3">
+                                <a href="newsletter_subscribers.php" class="btn btn-admin mb-2 w-100"><i class="fas fa-users me-2"></i>View Subscribers</a>
+                                <a href="publish_newsletter_on_important_news.php" class="btn btn-admin mb-2 w-100"><i class="fas fa-paper-plane me-2"></i>Send Important News</a>
+                                <a href="#" class="btn btn-outline-secondary w-100 disabled" tabindex="-1"><i class="fas fa-info-circle me-2"></i>How Newsletter Works</a>
+                            </div>
                         </div>
                     </div>
                     <?php endif; ?>

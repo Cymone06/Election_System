@@ -735,6 +735,7 @@ if ($next_upcoming_result && $next_upcoming_result->num_rows > 0) {
                                     <div class="text-muted">Starts: <?php echo date('M d, Y H:i', $start_time); ?></div>
                                     <div class="text-muted">Ends: <span class="fw-semibold text-danger"><?php echo date('M d, Y H:i', $end_time); ?></span></div>
                                 </div>
+                                
                                 <?php if ($less_than_24h): ?>
                                     <div class="countdown-box text-center mt-3 mt-md-0">
                                         <div class="fw-bold text-secondary mb-1">Election starts in:</div>
@@ -1416,5 +1417,31 @@ if ($next_upcoming_result && $next_upcoming_result->num_rows > 0) {
         }
     </script>
     <?php include '../includes/footer.php'; ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var liveResultsSection = document.getElementById('live-results');
+        if (!liveResultsSection) return;
+        // Animate each progress bar
+        var bars = liveResultsSection.querySelectorAll('.progress-bar');
+        bars.forEach(function(bar) {
+            var target = parseFloat(bar.getAttribute('aria-valuenow')) || 0;
+            bar.style.width = '0%';
+            bar.textContent = '0%';
+            setTimeout(function() {
+                var current = 0;
+                var step = target / 40; // 40 frames for smoothness
+                var interval = setInterval(function() {
+                    current += step;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(interval);
+                    }
+                    bar.style.width = current.toFixed(1) + '%';
+                    bar.textContent = Math.round(current) + '%';
+                }, 15);
+            }, 300); // slight delay for effect
+        });
+    });
+    </script>
 </body>
 </html> 

@@ -451,6 +451,74 @@ $stmt->close();
                         </div>
                     </div>
 
+                    <!-- Voting Progress Section -->
+                    <?php if (!empty($active_elections)): ?>
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-vote-yea me-2"></i>Your Voting Progress</h5>
+                            </div>
+                            <div class="card-body">
+                                <?php
+                                // Get all active positions
+                                $positions = [];
+                                $result = $conn->query("SELECT id, position_name FROM positions WHERE status = 'active' ORDER BY id ASC");
+                                while ($row = $result->fetch_assoc()) {
+                                    $positions[] = $row;
+                                }
+                                // Get user's votes for the current active election (if any)
+                                $active_election_id = null;
+                                if (!empty($active_elections)) {
+                                    $active_election_id = $active_elections[0]['id'];
+                                }
+                                $user_votes = [];
+                                if ($active_election_id) {
+                                    $stmt = $conn->prepare("SELECT position_id FROM votes WHERE voter_id = ? AND election_id = ?");
+                                    $stmt->bind_param("ii", $student_db_id, $active_election_id);
+                                    $stmt->execute();
+                                    $vote_result = $stmt->get_result();
+                                    while ($row = $vote_result->fetch_assoc()) {
+                                        $user_votes[] = $row['position_id'];
+                                    }
+                                    $stmt->close();
+                                }
+                                $total_positions = count($positions);
+                                $voted_positions = count($user_votes);
+                                $progress_percent = $total_positions > 0 ? round(($voted_positions / $total_positions) * 100) : 0;
+                                ?>
+                                <div class="mb-3">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: <?php echo $progress_percent; ?>%;" aria-valuenow="<?php echo $progress_percent; ?>" aria-valuemin="0" aria-valuemax="100">
+                                            <?php echo $progress_percent; ?>%
+                                        </div>
+                                    </div>
+                                </div>
+                                <ul class="list-group mb-3">
+                                    <?php foreach ($positions as $pos): ?>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <?php echo htmlspecialchars($pos['position_name']); ?>
+                                            <?php if (in_array($pos['id'], $user_votes)): ?>
+                                                <span class="badge bg-success"><i class="fas fa-check"></i> Voted</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary"><i class="fas fa-times"></i> Not Voted</span>
+                                            <?php endif; ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <?php if ($progress_percent < 100 && $active_election_id): ?>
+                                    <a href="../Voting & Results/vote.php?election_id=<?php echo $active_election_id; ?>" class="btn btn-success btn-lg">
+                                        <i class="fas fa-vote-yea me-2"></i>Go Vote Now
+                                    </a>
+                                <?php elseif ($progress_percent == 100): ?>
+                                    <div class="alert alert-success mb-0"><i class="fas fa-trophy me-2"></i>Congratulations! You have voted for all positions.</div>
+                                <?php else: ?>
+                                    <div class="alert alert-info mb-0">No active election to vote in at the moment.</div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Application Tracking Section -->
                     <?php if (!empty($student_applications)): ?>
                     <div class="col-12 mb-4">
