@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
         if ($email_changed) {
             // Generate verification code
             $verification_code = random_int(100000, 999999);
-            $_SESSION['pending_email_update'] = [
+            $pending_email_update = [
                 'user_type' => 'student',
                 'user_id' => $student_db_id,
                 'new_email' => $email,
@@ -142,9 +142,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
                 'new_password' => !empty($new_password) ? password_hash($new_password, PASSWORD_DEFAULT) : null
             ];
             require_once __DIR__ . '/includes/email_helper.php';
-            sendSystemEmail($email, 'Verify Your New Email', "Your verification code is: <b>$verification_code</b>");
-            header('Location: verify_new_email.php');
-            exit();
+            if (sendSystemEmail($email, 'Verify Your New Email', "Your verification code is: <b>$verification_code</b>")) {
+                $_SESSION['pending_email_update'] = $pending_email_update;
+                header('Location: verify_new_email.php');
+                exit();
+            }
+            $error = 'Could not send the verification code. Check the email address or try again later.';
         } else {
             if (!empty($new_password)) {
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
@@ -354,7 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
-                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <img src="uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                 <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -384,6 +387,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
         </div>
     </nav>
     <!-- End Navigation -->
+    <?php if ($error || $success): ?>
+        <div class="container mt-3">
+            <?php if ($error): ?><div class="alert alert-danger"><?php echo nl2br(htmlspecialchars($error)); ?></div><?php endif; ?>
+            <?php if ($success): ?><div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div><?php endif; ?>
+        </div>
+    <?php endif; ?>
     <div class="profile-header">
         <h1 class="mb-2"><i class="fas fa-user-graduate me-2"></i>Student Profile</h1>
         <p class="mb-0">View and update your profile information below.</p>

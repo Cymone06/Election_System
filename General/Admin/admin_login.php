@@ -2,7 +2,7 @@
 require_once '../config/session_config.php';
 
 // Check if already logged in as admin
-if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'admin') {
+if (isset($_SESSION['user_id']) && ($_SESSION['user_type'] ?? '') === 'admin') {
     header('Location: admin_dashboard.php');
     exit();
 }

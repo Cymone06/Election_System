@@ -1,7 +1,4 @@
 <?php
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-require '../../vendor/autoload.php';
 session_start();
 require_once '../config/connect.php';
 require_once __DIR__ . '/../includes/email_helper.php';
@@ -55,9 +52,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt3->execute();
                 $stmt3->close();
                 // Send code to email
-                sendVerificationCodeSMTP($email, $code, $user_name);
-                header('Location: verify_code.php');
-                exit();
+                $body = 'Dear ' . htmlspecialchars($user_name, ENT_QUOTES, 'UTF-8') . ',<br><br>Your verification code is: <b>' . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . '</b><br><br>This code will expire in 10 minutes.<br><br>Thank you!<br><br>STVC Election System';
+                if (sendSystemEmail($email, 'Verification Code - STVC Election System', $body, $user_name)) {
+                    header('Location: verify_code.php');
+                    exit();
+                }
+                unset($_SESSION['fp_code'], $_SESSION['fp_code_expires'], $_SESSION['fp_user_id'], $_SESSION['fp_user_email'], $_SESSION['fp_user_name'], $_SESSION['fp_user_type']);
+                $message = 'Failed to send the verification email. Please try again.';
+                $message_type = 'error';
             }
         } else {
             $message = 'No account found with that email address.';
@@ -70,17 +72,6 @@ function generateVerificationCode() {
     return str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
 }
 
-function sendVerificationCodeSMTP($to_email, $code, $user_name) {
-    $subject = 'Verification Code - STVC Election System';
-    $message = getVerificationCodeTemplate($code, $user_name);
-    return sendSystemEmail($to_email, $subject, $message, $user_name);
-}
-
-function getVerificationCodeTemplate($code, $user_name) {
-    // Implement the logic to generate the verification code email template
-    // This is a placeholder and should be replaced with the actual implementation
-    return "Dear $user_name,<br><br>Your verification code is: $code<br><br>This code will expire in 10 minutes.<br><br>Thank you!<br><br>STVC Election System";
-}
 ?>
 
 <!DOCTYPE html>

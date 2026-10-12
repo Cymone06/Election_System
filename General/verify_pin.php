@@ -147,7 +147,7 @@ function getLocationFromIP($ip) {
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="index.php">
-                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <img src="uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                 <span class="fw-bold">STVC Election System</span>
             </a>
         </div>

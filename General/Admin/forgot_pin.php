@@ -38,11 +38,14 @@ if ($step === 'request' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
         
         $code = random_int(100000, 999999);
-        $_SESSION['forgot_pin_code'] = $code;
-        $_SESSION['forgot_pin_code_expires'] = time() + 600;
-        sendSystemEmail($email, 'Admin 2FA PIN Reset Code', "Your 2FA PIN reset code is: <b>$code</b> (valid for 10 minutes)");
-        $success = 'A reset code has been sent to your email.';
-        $step = 'verify';
+        if (sendSystemEmail($email, 'Admin 2FA PIN Reset Code', "Your 2FA PIN reset code is: <b>$code</b> (valid for 10 minutes)")) {
+            $_SESSION['forgot_pin_code'] = $code;
+            $_SESSION['forgot_pin_code_expires'] = time() + 600;
+            $success = 'A reset code has been sent to your email.';
+            $step = 'verify';
+        } else {
+            $error = 'Could not send the reset code. Please try again later.';
+        }
     }
 }
 

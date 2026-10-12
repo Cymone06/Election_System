@@ -266,11 +266,12 @@ $unread_admin_count = get_unread_admin_message_count($conn, $admin_id);
     </style>
 </head>
 <body>
+    <?php if (empty($hide_admin_navbar)): ?>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="admin_dashboard.php">
-                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <img src="../uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                 <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System - Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -320,3 +321,4 @@ $unread_admin_count = get_unread_admin_message_count($conn, $admin_id);
             </div>
         </div>
     </nav> 
+    <?php endif; ?>
