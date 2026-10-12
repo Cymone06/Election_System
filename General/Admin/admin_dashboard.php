@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_type'] !== 'admin' && $_SES
 
 // Check if user is super admin
 $is_super_admin = ($_SESSION['user_type'] === 'super_admin');
+$is_embedded = ($_GET['embedded'] ?? '') === '1';
 
 // Get admin information
 $admin_id = $_SESSION['user_id'];
@@ -18,6 +19,17 @@ $stmt->bind_param("i", $admin_id);
 $stmt->execute();
 $admin = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+
+$unread_admin_count = 0;
+try {
+    $unread_result = $conn->prepare('SELECT COUNT(*) AS unread_count FROM admin_messages WHERE recipient_admin_id = ? AND is_read = 0');
+    $unread_result->bind_param('i', $admin_id);
+    $unread_result->execute();
+    $unread_admin_count = (int)($unread_result->get_result()->fetch_assoc()['unread_count'] ?? 0);
+    $unread_result->close();
+} catch (Throwable $e) {
+    $unread_admin_count = 0;
+}
 
 // Get statistics
 try {
@@ -83,47 +95,51 @@ if ($is_super_admin) {
 
         .stats-card {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
+            border: 1px solid #e3e9eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(28, 52, 62, 0.06);
+            padding: 1.25rem;
+            text-align: left;
+            transition: border-color 150ms ease, box-shadow 150ms ease;
             margin-bottom: 2rem;
         }
 
         .stats-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            border-color: #bdcdd3;
+            box-shadow: 0 3px 9px rgba(28, 52, 62, 0.1);
         }
 
         .stats-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            float: left;
+            margin: 0.15rem 1rem 0 0;
+            font-size: 1.4rem;
         }
 
         .stats-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 0.35rem;
         }
 
         .stats-label {
             color: #6c757d;
-            font-size: 1.1rem;
+            font-size: 0.88rem;
         }
 
         .action-card {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 2rem;
-            transition: all 0.3s ease;
+            border: 1px solid #e3e9eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(28, 52, 62, 0.06);
+            padding: 1.35rem;
+            transition: border-color 150ms ease, box-shadow 150ms ease;
             margin-bottom: 2rem;
         }
 
         .action-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border-color: #bdcdd3;
+            box-shadow: 0 3px 9px rgba(28, 52, 62, 0.1);
         }
 
         .btn-admin {
@@ -143,26 +159,362 @@ if ($is_super_admin) {
         }
 
         .welcome-section {
-            background: linear-gradient(rgba(44, 62, 80, 0.9), rgba(44, 62, 80, 0.9)),
-                        url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 2rem;
-            border-radius: 15px;
+            position: relative;
+            color: #203740;
+            padding: 1.5rem 0 1.25rem;
+            border-bottom: 1px solid #dfe6e8;
             margin-bottom: 2rem;
+        }
+
+        .welcome-section h2 {
+            margin-bottom: 0.45rem;
+            font-size: 1.65rem;
+            font-weight: 700;
+        }
+
+        .welcome-section p {
+            margin: 0;
+            color: #63747b;
+        }
+
+        .main-content h4 {
+            color: #203740;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .btn-admin {
+            border-radius: 6px;
+            font-size: 0.9rem;
         }
 
         .main-content {
             flex: 1;
             min-height: calc(100vh - 200px);
         }
+
+        body {
+            display: block;
+            background: #f3f6f7;
+        }
+
+        .dashboard-shell {
+            min-height: 100vh;
+        }
+
+        .dashboard-sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 1040;
+            display: flex;
+            flex-direction: column;
+            width: 264px;
+            padding: 1.25rem 1rem 1rem;
+            background: #fff;
+            border-right: 1px solid #dfe6e8;
+            box-shadow: 2px 0 12px rgba(31, 52, 61, 0.05);
+        }
+
+        .mobile-sidebar-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        .sidebar-brand {
+            padding-right: 3rem;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.25rem 0.5rem 1.25rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            border-bottom: 1px solid #e8edef;
+        }
+
+        .sidebar-brand img {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+        }
+
+        .sidebar-brand span {
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0.1rem;
+        }
+
+        .sidebar-section-label {
+            margin: 1rem 0 0.4rem;
+            padding: 0 0.7rem;
+            color: #77858b;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-height: 42px;
+            margin: 0.15rem 0;
+            padding: 0.55rem 0.7rem;
+            color: #40545d;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 150ms ease, color 150ms ease;
+        }
+
+        .sidebar-link i {
+            width: 1.15rem;
+            color: #75858c;
+            text-align: center;
+        }
+
+        .sidebar-link:hover {
+            color: var(--primary-color);
+            background: #f0f5f6;
+        }
+
+        .sidebar-link.active {
+            color: #145b83;
+            background: #e8f3f8;
+            font-weight: 600;
+        }
+
+        .sidebar-link.active i {
+            color: #1682b4;
+        }
+
+        .sidebar-link .badge {
+            margin-left: auto;
+        }
+
+        .sidebar-account {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 1rem 0.45rem 0;
+            border-top: 1px solid #e8edef;
+        }
+
+        .sidebar-account-icon {
+            display: grid;
+            flex: 0 0 38px;
+            width: 38px;
+            height: 38px;
+            place-items: center;
+            color: #fff;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+
+        .sidebar-account-name {
+            overflow: hidden;
+            color: #263a43;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-account-role {
+            color: #708087;
+            font-size: 0.75rem;
+        }
+
+        .dashboard-main {
+            min-width: 0;
+            min-height: 100vh;
+            margin-left: 264px;
+        }
+
+        .admin-page-viewport {
+            position: relative;
+            min-height: 100vh;
+            background: #f3f6f7;
+        }
+
+        .admin-page-frame {
+            display: block;
+            width: 100%;
+            min-height: 100vh;
+            border: 0;
+            background: #f3f6f7;
+        }
+
+        .admin-frame-loading {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 0.75rem;
+            padding-top: 5rem;
+            color: #51636c;
+            background: rgba(243, 246, 247, 0.94);
+        }
+
+        .admin-frame-loading[hidden] {
+            display: none;
+        }
+
+        .mobile-sidebar-bar {
+            display: none;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+        }
+
+        @media (max-width: 991.98px) {
+            .dashboard-sidebar {
+                width: min(84vw, 300px);
+                transform: translateX(-105%);
+                transition: transform 220ms ease;
+            }
+
+            .dashboard-sidebar.is-open {
+                transform: translateX(0);
+            }
+
+            .dashboard-main {
+                margin-left: 0;
+            }
+
+            .admin-page-viewport,
+            .admin-page-frame {
+                min-height: calc(100vh - 58px);
+            }
+
+            .mobile-sidebar-bar {
+                position: sticky;
+                top: 0;
+                z-index: 1020;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                min-height: 58px;
+                padding: 0 1rem;
+                background: #fff;
+                border-bottom: 1px solid #dfe6e8;
+            }
+
+            .mobile-sidebar-toggle,
+            .mobile-sidebar-close {
+                display: inline-grid;
+                width: 40px;
+                height: 40px;
+                place-items: center;
+                color: var(--primary-color);
+                background: #f0f5f6;
+                border: 0;
+                border-radius: 6px;
+            }
+
+            .sidebar-backdrop:not([hidden]) {
+                position: fixed;
+                inset: 0;
+                z-index: 1030;
+                display: block;
+                background: rgba(14, 28, 34, 0.48);
+                border: 0;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .mobile-sidebar-close {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
+    <?php if (!$is_embedded): ?>
+    <?php $hide_admin_navbar = true; ?>
     <?php include 'admin_header.php'; ?>
 
-    <div class="container main-content">
+    <div class="dashboard-shell">
+        <aside class="dashboard-sidebar" id="adminSidebar" aria-label="Administrator navigation">
+            <a class="sidebar-brand" href="admin_dashboard.php">
+                <img src="../uploads/gallery/seme.jpg" alt="">
+                <span>STVC Election System<br><small class="text-muted">Administration</small></span>
+            </a>
+            <button type="button" class="mobile-sidebar-close" id="sidebarClose" aria-label="Close navigation">
+                <i class="fas fa-times"></i>
+            </button>
+            <nav class="sidebar-nav">
+                <p class="sidebar-section-label">Workspace</p>
+                <a class="sidebar-link active" href="admin_dashboard.php" aria-current="page"><i class="fas fa-gauge-high"></i><span>Dashboard</span></a>
+                <a class="sidebar-link" href="manage_applications.php"><i class="fas fa-file-lines"></i><span>Applications</span></a>
+                <a class="sidebar-link" href="manage_positions.php"><i class="fas fa-list-check"></i><span>Positions</span></a>
+                <?php if ($is_super_admin): ?>
+                    <a class="sidebar-link" href="manage_elections.php"><i class="fas fa-landmark"></i><span>Elections</span></a>
+                <?php endif; ?>
+                <a class="sidebar-link" href="manage_current_candidates.php"><i class="fas fa-user-tie"></i><span>Current Leaders</span></a>
+                <a class="sidebar-link" href="elected_officials.php"><i class="fas fa-user-check"></i><span>Elected Officials</span></a>
+                <a class="sidebar-link" href="manage_gallery.php"><i class="fas fa-images"></i><span>Gallery</span></a>
+
+                <p class="sidebar-section-label">People</p>
+                <a class="sidebar-link" href="manage_accounts.php"><i class="fas fa-users"></i><span>Accounts</span><?php if ($is_super_admin && $pending_admins_count > 0): ?><span class="badge rounded-pill text-bg-warning"><?php echo (int)$pending_admins_count; ?></span><?php endif; ?></a>
+                <a class="sidebar-link" href="manage_reviews.php"><i class="fas fa-star"></i><span>Reviews</span></a>
+
+                <p class="sidebar-section-label">Communication</p>
+                <a class="sidebar-link" href="admin_messages.php"><i class="fas fa-inbox"></i><span>Inbox</span><?php if ($unread_admin_count > 0): ?><span class="badge rounded-pill text-bg-danger"><?php echo $unread_admin_count; ?></span><?php endif; ?></a>
+                <a class="sidebar-link" href="send_message.php"><i class="fas fa-paper-plane"></i><span>Send Message</span></a>
+                <a class="sidebar-link" href="manage_contents.php"><i class="fas fa-newspaper"></i><span>News &amp; Updates</span></a>
+                <?php if ($is_super_admin): ?>
+                    <a class="sidebar-link" href="newsletter_subscribers.php"><i class="fas fa-envelope-open-text"></i><span>Newsletter</span></a>
+                <?php endif; ?>
+
+                <p class="sidebar-section-label">System</p>
+                <a class="sidebar-link" href="reports.php"><i class="fas fa-chart-column"></i><span>Reports</span></a>
+                <a class="sidebar-link" href="settings.php"><i class="fas fa-gear"></i><span>Settings</span></a>
+                <?php if ($is_super_admin): ?>
+                    <a class="sidebar-link" href="data_recovery.php"><i class="fas fa-database"></i><span>Data Recovery</span></a>
+                <?php endif; ?>
+                <a class="sidebar-link" href="profile.php"><i class="fas fa-user-circle"></i><span>My Profile</span></a>
+                <a class="sidebar-link" href="../index.php" target="_top"><i class="fas fa-arrow-up-right-from-square"></i><span>View Site</span></a>
+                <a class="sidebar-link" href="../logout.php" target="_top"><i class="fas fa-right-from-bracket"></i><span>Sign Out</span></a>
+            </nav>
+            <div class="sidebar-account">
+                <span class="sidebar-account-icon"><i class="fas fa-<?php echo $is_super_admin ? 'crown' : 'user-shield'; ?>"></i></span>
+                <div class="min-w-0">
+                    <div class="sidebar-account-name"><?php echo htmlspecialchars(trim(($admin['first_name'] ?? '') . ' ' . ($admin['last_name'] ?? ''))); ?></div>
+                    <div class="sidebar-account-role"><?php echo $is_super_admin ? 'Super Administrator' : 'Administrator'; ?></div>
+                </div>
+            </div>
+        </aside>
+        <button type="button" class="sidebar-backdrop" id="sidebarBackdrop" aria-label="Close navigation" hidden></button>
+
+        <main class="dashboard-main">
+            <div class="mobile-sidebar-bar">
+                <button type="button" class="mobile-sidebar-toggle" id="sidebarToggle" aria-controls="adminSidebar" aria-expanded="false" aria-label="Open navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="fw-semibold">Admin Dashboard</span>
+                <?php if ($is_super_admin): ?><span class="badge text-bg-warning ms-auto">Super Admin</span><?php endif; ?>
+            </div>
+
+            <div class="admin-page-viewport" id="adminPageViewport">
+                <div class="admin-frame-loading" id="adminFrameLoading" role="status" aria-live="polite" hidden>
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span>Loading page...</span>
+                </div>
+                <iframe class="admin-page-frame" id="adminPageFrame" title="Admin page" hidden></iframe>
+                <section id="dashboardHome">
+
+    <div class="container-fluid main-content px-4 px-xl-5">
         <!-- Welcome Section -->
         <section class="welcome-section">
             <div class="row align-items-center">
@@ -362,6 +714,10 @@ if ($is_super_admin) {
             </div>
         </div>
     </div>
+    <?php if (!$is_embedded): ?>
+                </section>
+            </div>
+    <?php endif; ?>
 
         <!-- Footer -->
         <footer class="footer mt-5">
@@ -370,7 +726,7 @@ if ($is_super_admin) {
             <div class="row">
                 <div class="col-md-4">
                     <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
-                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <img src="../uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                         <span class="h5 mb-0">STVC Election System - Admin</span>
                     </div>
                 </div>
@@ -488,5 +844,152 @@ if ($is_super_admin) {
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <?php if (!$is_embedded): ?>
+    <script>
+        const adminSidebar = document.getElementById('adminSidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        const adminFrame = document.getElementById('adminPageFrame');
+        const dashboardHome = document.getElementById('dashboardHome');
+        const frameLoading = document.getElementById('adminFrameLoading');
+        const adminPrefix = window.location.pathname.replace(/admin_dashboard\.php$/, '');
+        let frameResizeObserver = null;
+
+        function closeAdminSidebar() {
+            adminSidebar.classList.remove('is-open');
+            sidebarBackdrop.hidden = true;
+            sidebarToggle.setAttribute('aria-expanded', 'false');
+            document.body.classList.remove('sidebar-open');
+        }
+
+        sidebarToggle.addEventListener('click', function () {
+            adminSidebar.classList.add('is-open');
+            sidebarBackdrop.hidden = false;
+            sidebarToggle.setAttribute('aria-expanded', 'true');
+            document.body.classList.add('sidebar-open');
+            sidebarClose.focus();
+        });
+        sidebarClose.addEventListener('click', closeAdminSidebar);
+        sidebarBackdrop.addEventListener('click', closeAdminSidebar);
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') closeAdminSidebar();
+        });
+
+        function setActiveSidebarLink(url) {
+            const destination = new URL(url, window.location.href);
+            adminSidebar.querySelectorAll('.sidebar-link').forEach(function (link) {
+                const active = new URL(link.href, window.location.href).pathname === destination.pathname;
+                link.classList.toggle('active', active);
+                if (active) link.setAttribute('aria-current', 'page');
+                else link.removeAttribute('aria-current');
+            });
+        }
+
+        function loadAdminPage(rawUrl, updateHistory) {
+            const destination = new URL(rawUrl, window.location.href);
+            if (destination.origin !== window.location.origin || !destination.pathname.startsWith(adminPrefix)) {
+                window.location.assign(destination.href);
+                return;
+            }
+
+            if (updateHistory) {
+                const shellUrl = new URL(window.location.href);
+                shellUrl.hash = destination.pathname.endsWith('/admin_dashboard.php')
+                    ? ''
+                    : encodeURIComponent(destination.pathname + destination.search);
+                window.history.pushState({ adminUrl: destination.href }, '', shellUrl.href);
+            }
+
+            if (frameResizeObserver) frameResizeObserver.disconnect();
+            if (destination.pathname.endsWith('/admin_dashboard.php')) {
+                adminFrame.hidden = true;
+                dashboardHome.hidden = false;
+                frameLoading.hidden = true;
+                setActiveSidebarLink(destination.href);
+                document.title = 'Admin Dashboard - STVC Election System';
+                if (window.matchMedia('(max-width: 991.98px)').matches) closeAdminSidebar();
+                return;
+            }
+
+            dashboardHome.hidden = true;
+            adminFrame.hidden = false;
+            frameLoading.hidden = false;
+            setActiveSidebarLink(destination.href);
+            if (window.matchMedia('(max-width: 991.98px)').matches) closeAdminSidebar();
+            destination.searchParams.set('embedded', '1');
+            adminFrame.src = destination.href;
+        }
+
+        function handleShellNavigation(event) {
+            const link = event.target.closest('a[href]');
+            if (!link || link.target === '_blank' || link.target === '_top' || link.hasAttribute('download') || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            if (link.getAttribute('href').startsWith('#')) return;
+            const destination = new URL(link.href, window.location.href);
+            if (destination.origin !== window.location.origin || !destination.pathname.startsWith(adminPrefix)) return;
+            event.preventDefault();
+            loadAdminPage(destination.href, true);
+        }
+
+        document.querySelector('.dashboard-shell').addEventListener('click', handleShellNavigation);
+
+        adminFrame.addEventListener('load', function () {
+            frameLoading.hidden = true;
+            try {
+                const frameDocument = adminFrame.contentDocument;
+                const loadedUrl = new URL(frameDocument.location.href);
+                const frameStyle = frameDocument.createElement('style');
+                frameStyle.textContent = 'nav.navbar { display: none !important; } body { padding-top: 0 !important; min-height: 100vh; } body > .container, body > .container-fluid { max-width: none; }';
+                frameDocument.head.appendChild(frameStyle);
+                adminFrame.style.height = Math.max(window.innerHeight - (window.matchMedia('(max-width: 991.98px)').matches ? 58 : 0), frameDocument.documentElement.scrollHeight) + 'px';
+                if (loadedUrl.origin === window.location.origin && loadedUrl.pathname.startsWith(adminPrefix)) {
+                    setActiveSidebarLink(loadedUrl.href);
+                    const shellUrl = new URL(window.location.href);
+                    shellUrl.hash = encodeURIComponent(loadedUrl.pathname + loadedUrl.search);
+                    window.history.replaceState({ adminUrl: loadedUrl.href }, '', shellUrl.href);
+                }
+                document.title = frameDocument.title || 'Admin Dashboard - STVC Election System';
+                frameDocument.addEventListener('click', handleShellNavigation);
+                frameResizeObserver = new ResizeObserver(function () {
+                    adminFrame.style.height = Math.max(window.innerHeight - (window.matchMedia('(max-width: 991.98px)').matches ? 58 : 0), frameDocument.documentElement.scrollHeight) + 'px';
+                });
+                frameResizeObserver.observe(frameDocument.documentElement);
+            } catch (error) {
+                window.location.assign(adminFrame.src);
+            }
+            if (!adminFrame.contentWindow.location.pathname.startsWith(adminPrefix)) {
+                window.location.assign(adminFrame.contentWindow.location.href);
+            }
+        });
+
+        function restoreShellRoute() {
+            const route = window.location.hash.slice(1);
+            if (!route) {
+                adminFrame.hidden = true;
+                dashboardHome.hidden = false;
+                frameLoading.hidden = true;
+                if (frameResizeObserver) frameResizeObserver.disconnect();
+                setActiveSidebarLink(window.location.pathname);
+                document.title = 'Admin Dashboard - STVC Election System';
+                return;
+            }
+            loadAdminPage(decodeURIComponent(route), false);
+        }
+
+        window.addEventListener('popstate', restoreShellRoute);
+
+        const initialRoute = window.location.hash.slice(1);
+        if (initialRoute) loadAdminPage(decodeURIComponent(initialRoute), false);
+
+        window.addEventListener('resize', function () {
+            if (!adminFrame.hidden && !frameResizeObserver && adminFrame.contentDocument) {
+                adminFrame.style.height = Math.max(window.innerHeight - (window.matchMedia('(max-width: 991.98px)').matches ? 58 : 0), adminFrame.contentDocument.documentElement.scrollHeight) + 'px';
+            }
+        });
+    </script>
+    <?php endif; ?>
+        </main>
+    </div>
+    <?php endif; ?>
 </body>
 </html> 

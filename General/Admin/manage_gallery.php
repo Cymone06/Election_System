@@ -130,7 +130,7 @@ while ($row = $res->fetch_assoc()) {
             <div class="row">
                 <div class="col-md-4">
                     <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
-                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <img src="../uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                         <span class="h5 mb-0">STVC Election System - Admin</span>
                     </div>
                 </div>

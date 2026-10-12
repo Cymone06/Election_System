@@ -38,11 +38,14 @@ if ($step === 'request' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         $code = random_int(100000, 999999);
-        $_SESSION['forgot_pin_code'] = $code;
-        $_SESSION['forgot_pin_code_expires'] = time() + 600;
-        sendSystemEmail($email, '2FA PIN Reset Code', "Your 2FA PIN reset code is: <b>$code</b> (valid for 10 minutes)");
-        $success = 'A reset code has been sent to your email.';
-        $step = 'verify';
+        if (sendSystemEmail($email, '2FA PIN Reset Code', "Your 2FA PIN reset code is: <b>$code</b> (valid for 10 minutes)")) {
+            $_SESSION['forgot_pin_code'] = $code;
+            $_SESSION['forgot_pin_code_expires'] = time() + 600;
+            $success = 'A reset code has been sent to your email.';
+            $step = 'verify';
+        } else {
+            $error = 'Could not send the reset code. Please try again later.';
+        }
     }
 }
 
@@ -121,7 +124,7 @@ if ($step === 'reset' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="index.php">
-                <img src="uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <img src="uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                 <span class="fw-bold">STVC Election System</span>
             </a>
         </div>

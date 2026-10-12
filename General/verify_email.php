@@ -1,7 +1,7 @@
 <?php
 require_once 'config/session_config.php';
 require_once 'config/connect.php';
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/includes/email_helper.php';
 
 if (!isset($_SESSION['pending_registration'])) {
     header('Location: index.php');
@@ -16,7 +16,7 @@ $error = '';
 $success = '';
 $resend_message = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend_code'])) {
     $input_code = trim($_POST['verification_code'] ?? '');
     $email = ($type === 'student') ? $data['email'] : $data['email'];
     $stmt = $conn->prepare('SELECT id, code, expires_at, is_verified FROM email_verifications WHERE email = ? ORDER BY id DESC LIMIT 1');
@@ -113,29 +113,19 @@ if (isset($_POST['resend_code'])) {
         // Generate new code
         $new_code = random_int(100000, 999999);
         $new_expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
-        // Insert new code into email_verifications
-        $stmt = $conn->prepare('INSERT INTO email_verifications (email, code, expires_at) VALUES (?, ?, ?)');
-        $stmt->bind_param('sss', $email, $new_code, $new_expires);
-        $stmt->execute();
-        $stmt->close();
         // Resend email
-        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-        try {
-            $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'kennedywambia6@gmail.com';
-            $mail->Password = 'otqa hnfo pjil ifdc';
-            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = 587;
-            $mail->setFrom('no-reply@yourdomain.com', 'STVC Election System');
-            $mail->addAddress($email);
-            $mail->isHTML(true);
-            $mail->Subject = 'Your Email Verification Code (Resent)';
-            $mail->Body = "Your new verification code is: <b>$new_code</b> (valid for 10 minutes)";
-            $mail->send();
-            $resend_message = 'A new verification code has been sent to your email.';
-        } catch (Exception $e) {
+        $body = 'Your new verification code is: <b>' . htmlspecialchars((string)$new_code, ENT_QUOTES, 'UTF-8') . '</b> (valid for 10 minutes)';
+        $recipient_name = $data['firstName'] ?? $data['first_name'] ?? '';
+        if (sendSystemEmail($email, 'Your Email Verification Code (Resent)', $body, $recipient_name)) {
+            $stmt = $conn->prepare('INSERT INTO email_verifications (email, code, expires_at) VALUES (?, ?, ?)');
+            $stmt->bind_param('sss', $email, $new_code, $new_expires);
+            if ($stmt->execute()) {
+                $resend_message = 'A new verification code has been sent to your email.';
+            } else {
+                $error = 'The email was sent, but the new code could not be saved. Please contact support.';
+            }
+            $stmt->close();
+        } else {
             $error = 'Failed to resend verification email. Please try again.';
         }
     }

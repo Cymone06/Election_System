@@ -27,6 +27,7 @@ composer.lock
 # Log files
 *.log
 /logs/
+/General/forget_password/email_log.txt
 
 # Cache files
 /cache/

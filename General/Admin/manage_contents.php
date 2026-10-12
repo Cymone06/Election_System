@@ -159,8 +159,15 @@ if ($type === 'news' && isset($_GET['send_now'])) {
     }
     $stmt->close();
     if (isset($subject) && isset($body)) {
-        $sent_count = sendNewsletterToAllSubscribers($conn, $subject, $body);
-        $success = "Newsletter sent to $sent_count subscribers.";
+        $delivery = sendNewsletterToAllSubscribers($conn, $subject, $body);
+        if ($delivery['total'] === 0) {
+            $success = 'No newsletter subscribers were found.';
+        } else {
+            $success = "Newsletter email sent to {$delivery['sent']} of {$delivery['total']} subscribers.";
+            if ($delivery['failed'] > 0) {
+                $error = "{$delivery['failed']} subscriber email(s) failed to send.";
+            }
+        }
     }
 }
 // --- Edit item ---

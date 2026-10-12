@@ -29,7 +29,7 @@ if (
         if ($email_changed) {
             // Generate verification code
             $verification_code = random_int(100000, 999999);
-            $_SESSION['pending_email_update'] = [
+            $pending_email_update = [
                 'user_type' => 'admin',
                 'user_id' => $_SESSION['user_id'],
                 'new_email' => $email,
@@ -41,8 +41,12 @@ if (
                 'new_password' => !empty($new_password) ? password_hash($new_password, PASSWORD_DEFAULT) : null
             ];
             require_once __DIR__ . '/../includes/email_helper.php';
-            sendSystemEmail($email, 'Verify Your New Email', "Your verification code is: <b>$verification_code</b>");
-            header('Location: ../verify_new_email.php');
+            if (sendSystemEmail($email, 'Verify Your New Email', "Your verification code is: <b>$verification_code</b>")) {
+                $_SESSION['pending_email_update'] = $pending_email_update;
+                header('Location: ../verify_new_email.php');
+                exit();
+            }
+            header('Location: profile.php?error=email_failed');
             exit();
         } else {
         // Update profile
@@ -75,11 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $admin = $stmt->get_result()->fetch_assoc();
         $stmt->close();
         $code = random_int(100000, 999999);
-        $_SESSION['2fa_code'] = $code;
-        $_SESSION['2fa_email'] = $admin['email'];
         require_once __DIR__ . '/../includes/email_helper.php';
-        sendSystemEmail($admin['email'], 'Your 2FA Verification Code', "Your 2FA code is: <b>$code</b>");
-        header('Location: verify_2fa.php');
+        if (sendSystemEmail($admin['email'], 'Your 2FA Verification Code', "Your 2FA code is: <b>$code</b>")) {
+            $_SESSION['2fa_code'] = $code;
+            $_SESSION['2fa_email'] = $admin['email'];
+            header('Location: verify_2fa.php');
+        } else {
+            header('Location: profile.php?error=email_failed');
+        }
         exit();
     } elseif (isset($_POST['disable_2fa'])) {
         $admin_id = $_SESSION['user_id'];
@@ -382,6 +389,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
         <?php if (isset($_GET['error']) && $_GET['error'] === 'invalid_password'): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-triangle me-2"></i>Current password is incorrect!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['error']) && $_GET['error'] === 'email_failed'): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>The verification email could not be sent. Please try again later.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
@@ -718,7 +731,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_2fa_pin'])) {
             <div class="row">
                 <div class="col-md-4">
                     <div class="footer-brand d-flex align-items-center justify-content-center justify-content-md-start">
-                        <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                        <img src="../uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                         <span class="h5 mb-0">STVC Election System - Admin</span>
                     </div>
                 </div>

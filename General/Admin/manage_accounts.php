@@ -92,10 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($email) {
                     $subject = 'Your Admin Account Has Been Approved!';
                     $body = "Dear $first_name,<br><br>Your admin account has been approved! You can now log in and access the system.<br><br>Thank you for being part of the STVC Election System.<br><br>Best regards,<br>STVC Election System Team";
-                    sendSystemEmail($email, $subject, $body, $first_name);
+                    $email_sent = sendSystemEmail($email, $subject, $body, $first_name);
+                } else {
+                    $email_sent = false;
                 }
             }
-            header('Location: manage_accounts.php?success=approved');
+            header('Location: manage_accounts.php?success=approved' . (empty($email_sent) ? '&email_failed=1' : ''));
             exit();
         } elseif ($action === 'reject' && $is_super_admin) {
             $user_id = (int)($_POST['user_id'] ?? 0);
@@ -128,10 +130,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($email) {
                     $subject = 'Your Student Account Has Been Approved!';
                     $body = "Dear $first_name,<br><br>Your student account has been approved! You can now log in and participate in the election system.<br><br>Thank you for being part of the STVC Election System.<br><br>Best regards,<br>STVC Election System Team";
-                    sendSystemEmail($email, $subject, $body, $first_name);
+                    $email_sent = sendSystemEmail($email, $subject, $body, $first_name);
+                } else {
+                    $email_sent = false;
                 }
             }
-            header('Location: manage_accounts.php?success=student_approved');
+            header('Location: manage_accounts.php?success=student_approved' . (empty($email_sent) ? '&email_failed=1' : ''));
             exit();
         } elseif ($action === 'reject_student') {
             $student_id = (int)($_POST['student_id'] ?? 0);
@@ -438,7 +442,7 @@ $stmt->close();
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="admin_dashboard.php">
-                <img src="../uploads/gallery/STVC logo.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
+                <img src="../uploads/gallery/seme.jpg" alt="STVC Logo" style="height:40px;width:auto;margin-right:10px;">
                 <span class="fw-bold" style="color:white;letter-spacing:1px;">STVC Election System - Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -510,6 +514,13 @@ $stmt->close();
                     }
                     echo htmlspecialchars($message);
                 ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['email_failed'])): ?>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>The account status was updated, but the notification email could not be sent.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>

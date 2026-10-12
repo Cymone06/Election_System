@@ -106,11 +106,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Send email if requested
         if ($send_email && !empty($emails)) {
             require_once '../includes/email_helper.php';
+            $email_sent_count = 0;
             foreach ($emails as $to_email) {
-                sendSystemEmail($to_email, $message_title, $message_content);
+                if (sendSystemEmail($to_email, $message_title, $message_content)) {
+                    $email_sent_count++;
+                }
             }
+            if ($email_sent_count < count($emails)) {
+                $success = 'The in-system message was saved.';
+                $error = 'Email notifications were sent to ' . $email_sent_count . ' of ' . count($emails) . ' recipients.';
+            } else {
+                $success = 'The in-system message and all email notifications were sent.';
+            }
+        } else {
+            $success = 'Message sent successfully!';
         }
-        $success = 'Message sent successfully!';
     }
 }
 

@@ -17,13 +17,20 @@ if ($stmt->fetch()) {
     // Compose email
     $subject = 'Important News: ' . $title;
     $body = '<h2>' . htmlspecialchars($title) . '</h2><p>' . nl2br(htmlspecialchars($content)) . '</p>';
-    $sent_count = sendNewsletterToAllSubscribers($conn, $subject, $body);
-    // Mark as sent
-    $stmt2 = $conn->prepare('UPDATE news SET newsletter_sent = 1 WHERE id = ?');
-    $stmt2->bind_param('i', $news_id);
-    $stmt2->execute();
-    $stmt2->close();
-    $msg = "Newsletter sent to $sent_count subscribers.";
+    $delivery = sendNewsletterToAllSubscribers($conn, $subject, $body);
+    if ($delivery['total'] > 0 && $delivery['failed'] === 0) {
+        $stmt2 = $conn->prepare('UPDATE news SET newsletter_sent = 1 WHERE id = ?');
+        $stmt2->bind_param('i', $news_id);
+        $stmt2->execute();
+        $stmt2->close();
+    }
+    if ($delivery['total'] === 0) {
+        $msg = 'No newsletter subscribers were found; the news remains queued.';
+    } elseif ($delivery['failed'] > 0) {
+        $msg = "Newsletter email sent to {$delivery['sent']} of {$delivery['total']} subscribers; failed addresses will be retried.";
+    } else {
+        $msg = "Newsletter sent to {$delivery['sent']} subscribers.";
+    }
 } else {
     $stmt->close();
     $msg = 'No new important news to send.';
